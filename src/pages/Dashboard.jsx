@@ -12,7 +12,7 @@ import {
 
 const Dashboard = () => {
   return (
-    <div className="min-h-screen bg-gray-950 py-6">
+    <div className="min-h-screen py-6">
       <div className="container mx-auto max-w-7xl px-4">
         <div className="space-y-6">
           {/* Quick Access and Summary Section */}

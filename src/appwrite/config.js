@@ -184,19 +184,36 @@ export class AppService {
   // INCOME MANAGEMENT
 
   //create a new income
-  async createIncome({ title, amount, category, description, date }) {
+  async createIncome({ title, amount, source, description, date, userId }) {
     try {
+      // Validate userId format before using it
+      if (!userId || typeof userId !== "string" || userId.length > 36) {
+        throw new Error("Invalid user ID format");
+      }
+
+      const formattedDate = new Date(date).toISOString().split("T")[0];
+
+      // Create a sanitized version of the userId for permissions
+      // Ensure it only contains allowed characters (alphanumeric, period, hyphen, underscore)
+      const sanitizedUserId = userId.replace(/[^a-zA-Z0-9._-]/g, "");
+
       return await this.databases.createDocument(
         conf.appwriteDatabaseId,
         conf.appwriteIncomeCollectionId,
         ID.unique(),
         {
           title,
-          amount,
-          category,
+          amount: parseFloat(amount),
+          source,
           description,
-          date,
-        }
+          date: formattedDate,
+          userId,
+        },
+        [
+          Permission.read(`user:${sanitizedUserId}`),
+          Permission.update(`user:${sanitizedUserId}`),
+          Permission.delete(`user:${sanitizedUserId}`),
+        ]
       );
     } catch (error) {
       console.error("Appwrite service :: createIncome :: error", error);

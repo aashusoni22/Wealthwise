@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   FiPlus,
   FiTarget,
@@ -7,6 +7,7 @@ import {
   FiAward,
   FiTrendingUp,
 } from "react-icons/fi";
+import GoalModal from "../components/GoalModal";
 
 const goals = [
   {
@@ -110,6 +111,8 @@ const GoalCard = ({ goal }) => {
 };
 
 const GoalsPage = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   return (
     <div className="bg-black min-h-screen text-white p-6">
       <div className="max-w-7xl mx-auto">
@@ -120,7 +123,10 @@ const GoalsPage = () => {
               Track your progress across different areas of your life
             </p>
           </div>
-          <button className="bg-indigo-500 text-white px-4 py-2 rounded-md flex items-center hover:bg-indigo-600 transition-colors">
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="bg-indigo-500 text-white px-4 py-2 rounded-md flex items-center hover:bg-indigo-600 transition-colors"
+          >
             <FiPlus className="mr-2" />
             Add New Goal
           </button>
@@ -132,6 +138,7 @@ const GoalsPage = () => {
           ))}
         </div>
       </div>
+      {isModalOpen && <GoalModal onClose={() => setIsModalOpen(false)} />}
     </div>
   );
 };
