@@ -6,8 +6,7 @@ const sizeClasses = {
   md: "h-8 w-8",
   lg: "h-12 w-12",
 };
-
-export default const Loader = ({ size = "md", className }) => {
+const Loader = ({ size = "md", className }) => {
   return (
     <div className="flex items-center justify-center">
       <div
@@ -20,3 +19,5 @@ export default const Loader = ({ size = "md", className }) => {
     </div>
   );
 };
+
+export default Loader;
