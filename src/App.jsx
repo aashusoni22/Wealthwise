@@ -1,10 +1,11 @@
+// src/App.jsx
 import React, { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import { login, logout } from "./store/authSlice";
 import authService from "./appwrite/auth";
 import { Outlet } from "react-router-dom";
-import Sidebar from "./components";
-import Loader from "./components/ui/loader";
+import { Sidebar } from "./components/Sidebar";
+import Loader from "./components/ui/Loader"; // Changed this line
 
 const App = () => {
   const dispatch = useDispatch();

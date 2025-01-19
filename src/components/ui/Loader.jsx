@@ -1,3 +1,4 @@
+// src/components/ui/Loader.jsx
 import React from "react";
 import { cn } from "../lib/utils";
 
@@ -6,6 +7,7 @@ const sizeClasses = {
   md: "h-8 w-8",
   lg: "h-12 w-12",
 };
+
 const Loader = ({ size = "md", className }) => {
   return (
     <div className="flex items-center justify-center">
