@@ -1,6 +1,6 @@
 import React from "react";
 import { cn } from "../lib/utils";
-import { Loader } from "./loader";
+import Loader from "./Loader";
 
 const variants = {
   primary:
@@ -16,7 +16,7 @@ const sizes = {
   lg: "px-5 py-2.5 text-base",
 };
 
-export const Button = ({
+const Button = ({
   children,
   className,
   variant = "primary",
@@ -45,3 +45,5 @@ export const Button = ({
     </button>
   );
 };
+
+export default Button;

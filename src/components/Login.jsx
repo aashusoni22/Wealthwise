@@ -7,7 +7,7 @@ import { showToast } from "./Toast";
 import authService from "../appwrite/auth";
 import { login as authLogin } from "../store/authSlice";
 import { Logo } from "../components";
-import { Button } from "./ui/button";
+import Button from "./ui/Button";
 import { Input } from "./ui/Input";
 
 const Login = () => {

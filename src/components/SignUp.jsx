@@ -7,7 +7,7 @@ import authService from "../appwrite/auth";
 import { login } from "../store/authSlice";
 import { showToast } from "./Toast";
 import { Logo } from "../components";
-import { Button } from "./ui/button";
+import Button from "./ui/Button";
 import { Input } from "./ui/Input";
 
 function Signup() {
