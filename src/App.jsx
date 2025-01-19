@@ -4,7 +4,7 @@ import { login, logout } from "./store/authSlice";
 import authService from "./appwrite/auth";
 import { Outlet } from "react-router-dom";
 import Sidebar from "./components";
-import { Loader } from "./components/ui/loader";
+import Loader from "./components/ui/loader";
 
 const App = () => {
   const dispatch = useDispatch();
