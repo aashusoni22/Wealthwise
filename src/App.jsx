@@ -3,7 +3,8 @@ import { useDispatch } from "react-redux";
 import { login, logout } from "./store/authSlice";
 import authService from "./appwrite/auth";
 import { Outlet } from "react-router-dom";
-import { Sidebar } from "./components"; // Sidebar should still be rendered
+import { Sidebar } from "./components";
+import { Loader } from "./components/ui/loader";
 
 const App = () => {
   const dispatch = useDispatch();
@@ -31,18 +32,22 @@ const App = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-900">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      <div className="flex items-center justify-center min-h-screen bg-surface-900">
+        <Loader size="lg" />
       </div>
     );
   }
 
   return (
-    <div className="bg-black text-white min-h-screen flex">
-      <Sidebar />
-      <main className="flex-1 p-7">
-        <Outlet />{" "}
-      </main>
+    <div className="min-h-screen bg-surface-900 text-surface-50">
+      <div className="flex flex-col lg:flex lg:flex-row h-screen overflow-hidden">
+        <Sidebar />
+        <main className="flex-1 overflow-y-auto">
+          <div className="container mx-auto px-6 py-8">
+            <Outlet />
+          </div>
+        </main>
+      </div>
     </div>
   );
 };

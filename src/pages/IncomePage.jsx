@@ -3,28 +3,117 @@ import {
   Plus,
   DollarSign,
   ArrowUp,
-  ArrowDown,
-  Calendar,
-  Download,
+  Search,
   Filter,
+  ChevronDown,
+  MoreHorizontal,
+  PieChart,
+  TrendingUp,
+  Wallet,
   Loader2,
-  Activity,
-  ArrowLeftRight,
+  DollarSignIcon,
+  Download,
+  Share2,
 } from "lucide-react";
-import IncomeModal from "../components/IncomeModal";
 import appService from "../appwrite/config";
 import authService from "../appwrite/auth";
+import IncomeModal from "../components/incomes/IncomeModal";
 
 const IncomePage = () => {
   const [incomes, setIncomes] = useState([]);
-  const [filteredIncomes, setFilteredIncomes] = useState(incomes);
-  const [selectedIncomes, setSelectedIncomes] = useState([]);
+  const [filteredIncomes, setFilteredIncomes] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [dateRange, setDateRange] = useState("month");
+  const [loading, setLoading] = useState(true);
   const [sourceFilter, setSourceFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState("This Month");
+  const [isMonthDropdownOpen, setIsMonthDropdownOpen] = useState(false);
+
+  // Mock data for categories (replace with real data)
+  const categories = [
+    { name: "Salary", amount: 5000, percentage: 45, color: "primary" },
+    { name: "Freelance", amount: 2500, percentage: 25, color: "emerald" },
+    { name: "Investments", amount: 1500, percentage: 15, color: "violet" },
+    { name: "Side Projects", amount: 1000, percentage: 10, color: "amber" },
+    { name: "Other", amount: 500, percentage: 5, color: "pink" },
+  ];
+
+  const transactions = [
+    {
+      id: 1,
+      title: "Salary",
+      amount: "2300",
+      category: "Salary",
+      date: "Today at 2:30 PM",
+      icon: DollarSignIcon,
+      color: "primary",
+      description: "Monthly salary",
+    },
+    {
+      id: 2,
+      title: "Freelance",
+      amount: "1500",
+      category: "Freelance",
+      date: "Today at 2:30 PM",
+      icon: DollarSignIcon,
+      color: "emerald",
+      description: "Freelance work",
+    },
+    {
+      id: 3,
+      title: "Investments",
+      amount: "800",
+      category: "Investments",
+      date: "Today at 2:30 PM",
+      icon: DollarSignIcon,
+      color: "violet",
+      description: "Monthly investments",
+    },
+    {
+      id: 4,
+      title: "Side Projects",
+      amount: "500",
+      category: "Side Projects",
+      date: "Today at 2:30 PM",
+      icon: DollarSignIcon,
+      color: "amber",
+      description: "Side projects income",
+    },
+    {
+      id: 5,
+      title: "Other",
+      amount: "200",
+      category: "Other",
+      date: "Today at 2:30 PM",
+      icon: DollarSignIcon,
+      color: "pink",
+      description: "Other income",
+    },
+  ];
+
+  const monthOptions = [
+    "This Month",
+    "Last Month",
+    "October 2024",
+    "September 2024",
+    "August 2024",
+    "July 2024",
+    "June 2024",
+    "May 2024",
+    "April 2024",
+    "March 2024",
+    "February 2024",
+    "January 2024",
+  ];
+
+  // Get unique sources
+  const uniqueSources = Array.from(
+    new Set(incomes.map((income) => income.source))
+  );
 
   const getIncomes = async () => {
     try {
@@ -45,6 +134,17 @@ const IncomePage = () => {
     getIncomes();
   }, []);
 
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (isMonthDropdownOpen && !event.target.closest(".month-dropdown")) {
+        setIsMonthDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, [isMonthDropdownOpen]);
+
   const totalIncome = filteredIncomes.reduce(
     (sum, item) => sum + item.amount,
     0
@@ -55,10 +155,6 @@ const IncomePage = () => {
   const pendingIncome = filteredIncomes
     .filter((item) => item.status === "Pending")
     .reduce((sum, item) => sum + item.amount, 0);
-
-  const uniqueSources = Array.from(
-    new Set(incomes.map((income) => income.source))
-  );
 
   const handleCheckBoxChange = (incomeId) => {
     setSelectedIncomes((prev) =>
@@ -95,6 +191,12 @@ const IncomePage = () => {
     return new Date(date).toLocaleDateString();
   };
 
+  const handleIncomeSubmit = (formData) => {
+    // Handle the form submission
+    console.log("New Expense:", formData);
+    // Add your logic here
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen ">
@@ -104,234 +206,265 @@ const IncomePage = () => {
   }
 
   return (
-    <div className="min-h-screen  text-white p-8">
-      {/* Header Section */}
-      <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-teal-400 to-blue-500 bg-clip-text text-transparent">
-              Income Dashboard
-            </h1>
-            <p className="text-gray-400 mt-2">
-              Track and manage your revenue streams
-            </p>
-          </div>
-          <div className="flex space-x-4">
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="bg-gray-700 hover:bg-gray-600 p-2 rounded-lg"
-            >
-              <Filter className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="bg-gradient-to-r from-teal-400 to-blue-500 px-4 py-2 rounded-lg flex items-center hover:opacity-90 transition-opacity"
-            >
-              <Plus className="w-5 h-5 mr-2" />
-              Add Income
-            </button>
-          </div>
+    <div className="min-h-screen lg:py-6 text-slate-100">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/50 mb-8 rounded-2xl backdrop-blur-sm">
+        <div>
+          <h1 className="text-2xl font-semibold text-slate-100">
+            Income Overview
+          </h1>
+          <p className="text-slate-400 mt-1">
+            Keep track of your income patterns and manage your finances
+            effectively
+          </p>
         </div>
 
-        {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-            <div className="flex items-center justify-between">
-              <p className="text-gray-400">Total Income</p>
-              <div className="bg-green-500/20 p-2 rounded-lg">
-                <DollarSign className="w-5 h-5 text-green-500" />
-              </div>
-            </div>
-            <h3 className="text-2xl font-bold mt-2">
-              ${totalIncome.toFixed(2)}
-            </h3>
-            <div className="flex items-center mt-2 text-green-500">
-              <ArrowUp className="w-4 h-4 mr-1" />
-              <span className="text-sm">12% from last month</span>
-            </div>
-          </div>
-
-          <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-            <div className="flex items-center justify-between">
-              <p className="text-gray-400">Average per month</p>
-              <div className="bg-blue-500/20 p-2 rounded-lg">
-                <Activity className="w-5 h-5 text-blue-500" />
-              </div>
-            </div>
-            <h3 className="text-2xl font-bold mt-2">
-              ${receivedIncome.toFixed(2)}
-            </h3>
-            <div className="flex items-center mt-2 text-green-500">
-              <ArrowUp className="w-4 h-4 mr-1" />
-              <span className="text-sm">8% from last month</span>
-            </div>
-          </div>
-
-          <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-            <div className="flex items-center justify-between">
-              <p className="text-gray-400">Sources</p>
-              <div className="bg-yellow-500/20 p-2 rounded-lg">
-                <ArrowLeftRight className="w-5 h-5 text-yellow-500" />
-              </div>
-            </div>
-            <h3 className="text-2xl font-bold mt-2">
-              ${pendingIncome.toFixed(2)}
-            </h3>
-            <div className="flex items-center mt-2 text-red-500">
-              <ArrowDown className="w-4 h-4 mr-1" />
-              <span className="text-sm">3% from last month</span>
-            </div>
-          </div>
+        <div className="flex items-center gap-3">
+          <button className="p-2 hover:bg-slate-800 rounded-xl text-slate-400 hover:text-slate-300 transition-colors">
+            <Download className="w-5 h-5" />
+          </button>
+          <button className="p-2 hover:bg-slate-800 rounded-xl text-slate-400 hover:text-slate-300 transition-colors">
+            <Share2 className="w-5 h-5" />
+          </button>
+          <button
+            onClick={() => setIsAddModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-xl transition-colors"
+          >
+            <Plus className="w-5 h-5" />
+            Add Income
+          </button>
         </div>
+      </div>
 
-        {/* Filters */}
-        {showFilters && (
-          <div className="bg-gray-800 rounded-xl p-6 mb-8 border border-gray-700">
-            <div className="flex flex-wrap gap-4">
-              <select
-                value={sourceFilter}
-                onChange={(e) => setSourceFilter(e.target.value)}
-                className="bg-gray-700 text-white p-2 rounded-lg border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="">All Sources</option>
-                {uniqueSources.map((source, index) => (
-                  <option value={source} key={index}>
-                    {source}
-                  </option>
-                ))}
-              </select>
-
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="bg-gray-700 text-white p-2 rounded-lg border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="">All Statuses</option>
-                <option value="Received">Received</option>
-                <option value="Pending">Pending</option>
-              </select>
-
-              <input
-                type="date"
-                value={dateFilter}
-                onChange={(e) => setDateFilter(e.target.value)}
-                className="bg-gray-700 text-white p-2 rounded-lg border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-
-              {(sourceFilter || statusFilter || dateFilter) && (
-                <button
-                  onClick={() => {
-                    setSourceFilter("");
-                    setStatusFilter("");
-                    setDateFilter("");
-                  }}
-                  className="bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-red-500/20 hover:text-red-500 transition-colors"
-                >
-                  Clear Filters
+      <div className="max-w-[1600px] mx-auto">
+        {/* Main Grid Layout */}
+        <div className="grid grid-cols-12 gap-6">
+          {/* Left Sidebar */}
+          <div className="col-span-12 lg:col-span-3 space-y-6">
+            {/* Category Distribution */}
+            <div className="bg-surface-800/20 lg:min-h-[45rem] rounded-2xl backdrop-blur-sm border border-slate-800/50 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-slate-100">
+                  Sources
+                </h2>
+                <button className="p-2 hover:bg-slate-800 rounded-xl text-slate-400 hover:text-slate-300 transition-colors">
+                  <PieChart className="w-5 h-5" />
                 </button>
-              )}
+              </div>
+              <div className="space-y-4">
+                {categories.map((category, index) => (
+                  <div key={index} className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className={`w-2 h-2 rounded-full bg-${category.color}-500`}
+                        ></div>
+                        <span className="text-slate-300">{category.name}</span>
+                      </div>
+                      <span className="text-slate-400">${category.amount}</span>
+                    </div>
+                    <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full bg-${category.color}-500 rounded-full`}
+                        style={{ width: `${category.percentage}%` }}
+                      ></div>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-400">
+                        {category.percentage}% of total
+                      </span>
+                      <div className="flex items-center gap-1 text-emerald-500">
+                        <ArrowUp className="w-3 h-3" />
+                        <span>4.3%</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-        )}
 
-        {/* Transactions Table */}
-        <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
-          {selectedIncomes.length > 0 && (
-            <div className="p-4 bg-gray-700 border-b border-gray-600">
-              <button
-                onClick={handleDeleteIncomes}
-                className="bg-red-500/20 text-red-500 px-4 py-2 rounded-lg hover:bg-red-500/30 transition-colors"
-              >
-                Delete Selected ({selectedIncomes.length})
-              </button>
+          {/* Main Content Area */}
+          <div className="col-span-12 lg:col-span-9 space-y-6">
+            {/* Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-surface-800/20 rounded-2xl backdrop-blur-sm border border-slate-800/50 p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-slate-400">Total Income</p>
+                    <p className="text-2xl font-semibold mt-1">$9,458.25</p>
+                  </div>
+                  <div className="bg-primary-500/20 p-3 rounded-xl">
+                    <DollarSign className="w-6 h-6 text-primary-500" />
+                  </div>
+                </div>
+                <div className="mt-4 flex items-center gap-1 text-sm text-emerald-500">
+                  <ArrowUp className="w-4 h-4" />
+                  <span>18.2% from last month</span>
+                </div>
+              </div>
+
+              <div className="bg-surface-800/20 rounded-2xl backdrop-blur-sm border border-slate-800/50 p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-slate-400">Average Income</p>
+                    <p className="text-2xl font-semibold mt-1">$1,891.65</p>
+                  </div>
+                  <div className="bg-emerald-500/20 p-3 rounded-xl">
+                    <TrendingUp className="w-6 h-6 text-emerald-500" />
+                  </div>
+                </div>
+                <div className="mt-4 flex items-center gap-1 text-sm text-emerald-500">
+                  <ArrowUp className="w-4 h-4" />
+                  <span>12.5% from last week</span>
+                </div>
+              </div>
+
+              <div className="bg-surface-800/20 rounded-2xl backdrop-blur-sm border border-slate-800/50 p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-slate-400">Active Sources</p>
+                    <p className="text-2xl font-semibold mt-1">5 sources</p>
+                  </div>
+                  <div className="bg-violet-500/20 p-3 rounded-xl">
+                    <Wallet className="w-6 h-6 text-violet-500" />
+                  </div>
+                </div>
+                <div className="mt-4 flex items-center gap-1 text-sm text-slate-400">
+                  <span>Diversified income streams</span>
+                </div>
+              </div>
             </div>
-          )}
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-700/50">
-                <tr>
-                  <th className="w-8 px-6 py-4">
-                    <input
-                      type="checkbox"
-                      className="rounded border-gray-600 bg-transparent"
-                      checked={
-                        selectedIncomes.length === filteredIncomes.length
-                      }
-                      onChange={() =>
-                        selectedIncomes.length === filteredIncomes.length
-                          ? setSelectedIncomes([])
-                          : setSelectedIncomes(filteredIncomes.map((i) => i.id))
-                      }
-                    />
-                  </th>
-                  <th className="text-left px-6 py-4 text-gray-400 font-medium">
-                    Transaction
-                  </th>
-                  <th className="text-left px-6 py-4 text-gray-400 font-medium">
-                    Amount
-                  </th>
-                  <th className="text-left px-6 py-4 text-gray-400 font-medium">
-                    Details
-                  </th>
-                  <th className="text-left px-6 py-4 text-gray-400 font-medium">
-                    Source
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredIncomes.map((income) => (
-                  <tr
-                    key={income.id}
-                    className="border-t border-gray-700 hover:bg-gray-700/50 transition-colors"
-                  >
-                    <td className="px-6 py-4">
-                      <input
-                        type="checkbox"
-                        checked={selectedIncomes.includes(income.id)}
-                        onChange={() => handleCheckBoxChange(income.id)}
-                        className="rounded border-gray-600 bg-transparent"
-                      />
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center">
-                        <div className="w-10 h-10 bg-gradient-to-br from-teal-400 to-blue-500 rounded-lg flex items-center justify-center mr-3">
-                          <DollarSign className="text-white" />
-                        </div>
-                        <div>
-                          <div className="font-medium">{income.title}</div>
-                          <div className="text-sm text-gray-400">
-                            {formattedDate(income.date)}
+
+            {/* Transactions Section */}
+            <div className="space-y-4">
+              {/* Header */}
+              <div className="backdrop-blur-sm border-b border-slate-800/50 p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <h3 className="text-lg font-medium text-slate-200">
+                      Recent Transactions
+                    </h3>
+                    <span className="text-sm text-slate-400">
+                      {transactions.length} transactions
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <div className="relative">
+                      <button
+                        className="flex items-center gap-2 px-3 py-1.5 bg-slate-800/50 rounded-lg text-sm hover:bg-slate-700/50 transition-colors"
+                        onClick={() =>
+                          setIsMonthDropdownOpen(!isMonthDropdownOpen)
+                        }
+                      >
+                        {selectedMonth}
+                        <ChevronDown
+                          className={`w-4 h-4 text-slate-400 transition-transform ${
+                            isMonthDropdownOpen ? "rotate-180" : ""
+                          }`}
+                        />
+                      </button>
+
+                      {isMonthDropdownOpen && (
+                        <div className="absolute top-full left-0 mt-2 w-48 py-2 bg-slate-800 rounded-lg shadow-xl border border-slate-700/50 backdrop-blur-sm z-50">
+                          <div className="max-h-64 overflow-y-auto">
+                            {monthOptions.map((month, index) => (
+                              <button
+                                key={index}
+                                className="w-full px-4 py-2 text-left text-sm hover:bg-slate-700/50 text-slate-200 transition-colors"
+                                onClick={() => {
+                                  setSelectedMonth(month);
+                                  setIsMonthDropdownOpen(false);
+                                }}
+                              >
+                                {month}
+                              </button>
+                            ))}
                           </div>
                         </div>
+                      )}
+                    </div>
+
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+                      <input
+                        type="text"
+                        placeholder="Search..."
+                        className="w-48 pl-9 pr-4 py-1.5 bg-slate-800/50 rounded-lg border border-slate-700/50 text-slate-100 placeholder-slate-400 text-sm"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                      />
+                    </div>
+
+                    <button className="p-1.5 hover:bg-slate-800/70 rounded-lg text-slate-400">
+                      <Filter className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="divide-y divide-slate-800">
+                {transactions.map((transaction) => (
+                  <div
+                    key={transaction.id}
+                    className="flex items-center justify-between py-4 hover:bg-slate-800/50 rounded-xl px-4 transition-colors group"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div
+                        className={`w-12 h-12 rounded-xl bg-${transaction.color}-500/20 flex items-center justify-center group-hover:scale-105 transition-transfor`}
+                      >
+                        <transaction.icon
+                          className={`w-6 h-6 text-${transaction.color}-500`}
+                        />
                       </div>
-                    </td>
-                    <td className="px-6 py-4 font-medium">
-                      ${income.amount.toFixed(2)}
-                    </td>
-                    <td className="px-6 py-4">
-                      {income.description.length > 20
-                        ? income.description.slice(0, 20) + "..."
-                        : income.description || income.title}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="px-3 py-1 rounded-lg text-sm bg-green-500/20 text-green-500">
-                        {income.source}
-                      </span>
-                    </td>
-                  </tr>
+                      <div>
+                        <h3 className="font-medium text-slate-200">
+                          {transaction.title}
+                        </h3>
+                        <div className="flex items-center gap-3 mt-1">
+                          <span className="text-xs px-2 py-1 rounded-lg bg-blue-500/20 text-blue-500">
+                            {transaction.category}
+                          </span>
+                          <span className="text-sm text-slate-400">
+                            {transaction.date}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-6">
+                      <div className="text-right">
+                        <p className="text-lg font-medium text-emerald-500">
+                          +${transaction.amount}
+                        </p>
+                        <p className="text-sm text-slate-400">
+                          {transaction.description}
+                        </p>
+                      </div>
+                      <button className="p-2 hover:bg-slate-700 rounded-lg opacity-0 group-hover:opacity-100 transition-all">
+                        <MoreHorizontal className="w-5 h-5 text-slate-400" />
+                      </button>
+                    </div>
+                  </div>
                 ))}
-              </tbody>
-            </table>
+              </div>
+
+              {isAddModalOpen && (
+                <IncomeModal
+                  onClose={() => setIsAddModalOpen(false)}
+                  onClick={handleIncomeSubmit}
+                />
+              )}
+
+              <div className="pt-4 flex justify-center">
+                <button className="text-sm text-blue-500 hover:text-blue-400 transition-colors">
+                  View All Transactions
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-      {isModalOpen && (
-        <IncomeModal
-          onClose={() => {
-            setIsModalOpen(false);
-          }}
-        />
-      )}
     </div>
   );
 };

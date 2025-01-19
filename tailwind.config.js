@@ -1,26 +1,46 @@
 /** @type {import('tailwindcss').Config} */
-export default {
+module.exports = {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
-      animation: {
-        "border-move": "borderMove 3s linear infinite",
-      },
-      keyframes: {
-        borderMove: {
-          "0%": { borderColor: "rgba(236, 72, 153, 1)" }, // pink-500
-          "25%": { borderColor: "rgba(0, 153, 255, 1)" }, // light blue
-          "50%": { borderColor: "rgba(75, 85, 99, 1)" }, // gray-600
-          "75%": { borderColor: "rgba(236, 72, 153, 1)" }, // pink-500
-          "100%": { borderColor: "rgba(0, 153, 255, 1)" }, // light blue
+      colors: {
+        primary: {
+          50: "#f0f9ff",
+          100: "#e0f2fe",
+          200: "#bae6fd",
+          300: "#7dd3fc",
+          400: "#38bdf8",
+          500: "#0ea5e9",
+          600: "#0284c7",
+          700: "#0369a1",
+          800: "#075985",
+          900: "#0c4a6e",
+        },
+        surface: {
+          50: "#f8fafc",
+          100: "#f1f5f9",
+          200: "#e2e8f0",
+          300: "#cbd5e1",
+          400: "#94a3b8",
+          500: "#64748b",
+          600: "#475569",
+          700: "#334155",
+          800: "#1e293b",
+          900: "#0f172a",
         },
       },
-      colors: {
-        "scroll-thumb": "#4b5563",
-        "scroll-track": "#1f1f1f",
-        "scroll-hover": "#6b7280",
+      borderRadius: {
+        none: "0",
+        sm: "0.125rem",
+        DEFAULT: "0.25rem",
+        md: "0.375rem",
+        lg: "0.5rem",
+        xl: "0.75rem",
+        "2xl": "1rem",
+        "3xl": "1.5rem",
+        full: "9999px",
       },
     },
   },
-  plugins: [],
+  plugins: [require("@tailwindcss/forms")],
 };

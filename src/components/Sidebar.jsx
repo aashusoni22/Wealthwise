@@ -1,23 +1,98 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
+import { motion, AnimatePresence } from "framer-motion";
 import { logout } from "../store/authSlice";
 import authService from "../appwrite/auth";
 import { showToast } from "./Toast";
 import Logo from "./Logo";
 import profile from "../assets/profile.png";
-import { FaMoneyCheckAlt, FaPiggyBank } from "react-icons/fa";
-import { RxDashboard } from "react-icons/rx";
-import { FaMoneyBills } from "react-icons/fa6";
-import { BiLogIn, BiUser } from "react-icons/bi";
-import { FiLogOut, FiSettings } from "react-icons/fi";
+import {
+  Menu,
+  X,
+  LayoutDashboard,
+  Wallet,
+  PiggyBank,
+  TrendingUp,
+  LogOut,
+  Settings,
+  ChevronRight,
+  LogIn,
+  UserPlus,
+  ChevronLeft,
+  CircleDollarSign,
+  BarChart3,
+  PieChart,
+  Target,
+  FileBarChart,
+  Tags,
+  Calendar,
+  User,
+} from "lucide-react";
+
+const MenuItem = ({ icon: Icon, label, isActive, onClick }) => {
+  return (
+    <motion.button
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      onClick={onClick}
+      className={`
+        group flex w-full items-center gap-3 rounded-xl p-3
+        transition-all duration-300 ease-out
+        ${
+          isActive
+            ? "bg-primary-500/10 text-primary-500"
+            : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-200"
+        }
+      `}
+    >
+      <Icon
+        className={`h-5 w-5 ${
+          isActive ? "text-primary-500" : "text-slate-400"
+        }`}
+      />
+      <span className="text-sm font-medium">{label}</span>
+      {isActive && (
+        <motion.div
+          layoutId="activeIndicator"
+          className="ml-auto h-2 w-2 rounded-full bg-primary-500"
+          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        />
+      )}
+    </motion.button>
+  );
+};
+
+const UserProfile = ({ user }) => (
+  <div className="w-full flex items-center gap-3 rounded-xl p-3 text-slate-300 bg-surface-800/20 backdrop-blur-sm border border-slate-700/50">
+    <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary-500/10">
+      <User className="w-5 h-5 text-primary-500" />
+    </div>
+
+    <div className="min-w-0 flex-1">
+      <h2 className="truncate text-sm font-medium text-slate-200">
+        {user?.name || "Guest User"}
+      </h2>
+      <p className="truncate text-xs text-slate-400">
+        {user?.email || "user@example.com"}
+      </p>
+    </div>
+
+    <div className="h-2 w-2 rounded-full bg-emerald-500 ring-4 ring-emerald-500/20" />
+  </div>
+);
 
 const Sidebar = () => {
+  const [isOpen, setIsOpen] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
   const isAuthenticated = useSelector((state) => state.auth.status);
   const userData = useSelector((state) => state.auth.userData);
+
+  useEffect(() => {
+    setIsOpen(false);
+  }, [location.pathname]);
 
   const handleLogout = async () => {
     try {
@@ -32,131 +107,200 @@ const Sidebar = () => {
 
   const navItems = [
     {
-      name: "Dashboard",
-      slug: "/",
-      icon: <RxDashboard className="w-5 h-5" />,
-      active: true,
+      label: "Dashboard",
+      icon: LayoutDashboard,
+      path: "/",
+      requireAuth: true,
+      section: "main",
     },
     {
-      name: "Expenses",
-      slug: "/expenses",
-      icon: <FaMoneyBills className="w-5 h-5" />,
-      active: isAuthenticated,
+      label: "Expenses",
+      icon: Wallet,
+      path: "/expenses",
+      requireAuth: true,
+      section: "money",
     },
     {
-      name: "Income",
-      slug: "/income",
-      icon: <FaMoneyCheckAlt className="w-5 h-5" />,
-      active: isAuthenticated,
+      label: "Income",
+      icon: TrendingUp,
+      path: "/income",
+      requireAuth: true,
+      section: "money",
     },
     {
-      name: "Goals",
-      slug: "/goals",
-      icon: <FaPiggyBank className="w-5 h-5" />,
-      active: isAuthenticated,
+      label: "Budgets",
+      icon: PieChart,
+      path: "/budgets",
+      requireAuth: true,
+      section: "money",
     },
+
+    // Planning
     {
-      name: "Login",
-      slug: "/login",
-      icon: <BiLogIn className="w-5 h-5" />,
-      active: !isAuthenticated,
-    },
-    {
-      name: "Signup",
-      slug: "/signup",
-      icon: <BiUser className="w-5 h-5" />,
-      active: !isAuthenticated,
+      label: "Goals",
+      icon: Target,
+      path: "/goals",
+      requireAuth: true,
+      section: "planning",
     },
   ];
 
-  const NavItem = ({ item }) => {
-    const isActive = location.pathname === item.slug;
-    return (
-      <li>
-        <button
-          onClick={() => navigate(item.slug)}
-          className={`w-full flex items-center space-x-4 px-6 py-3 rounded-xl transition-all duration-300 group ${
-            isActive
-              ? "bg-gradient-to-r from-pink-500/20 to-pink-500/10 text-pink-500"
-              : "hover:bg-gray-800/40 text-gray-400 hover:text-gray-100"
-          }`}
-        >
-          <span
-            className={`transition-transform duration-300 group-hover:scale-110 ${
-              isActive
-                ? "text-pink-500"
-                : "text-gray-400 group-hover:text-pink-500"
-            }`}
-          >
-            {item.icon}
-          </span>
-          <span className="font-medium">{item.name}</span>
-          {isActive && (
-            <div className="w-1.5 h-1.5 rounded-full bg-pink-500 ml-auto" />
-          )}
-        </button>
-      </li>
-    );
-  };
+  const authItems = [
+    { label: "Login", icon: LogIn, path: "/login", requireAuth: false },
+    { label: "Sign Up", icon: UserPlus, path: "/signup", requireAuth: false },
+  ];
 
-  return (
-    <div className="h-screen w-72 bg-gradient-to-b from-gray-900 to-gray-950 border-r border-gray-800/50 flex flex-col sticky top-0">
-      <div className="p-6">
-        <Logo textsize="text-2xl" />
+  const sidebarContent = (
+    <>
+      <div className="flex h-16 items-center justify-between px-6 border-b border-slate-800/50">
+        <Logo textsize="text-xl" />
+        <button
+          onClick={() => setIsOpen(false)}
+          className="lg:hidden p-2 hover:bg-slate-800/50 rounded-xl text-slate-400 hover:text-slate-200 transition-colors"
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </button>
       </div>
 
-      {isAuthenticated && (
-        <div className="mx-6 mb-8">
-          <div className="relative p-4 bg-gradient-to-br from-gray-800/50 to-gray-800/30 rounded-2xl backdrop-blur-xl">
-            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-pink-500/10 to-transparent" />
-            <div className="relative flex items-center space-x-4">
-              <div className="relative">
-                <img
-                  src={userData?.profilePicture || profile}
-                  alt="Profile"
-                  className="w-12 h-12 rounded-xl object-cover"
-                />
-                <div className="absolute inset-0 rounded-xl ring-2 ring-pink-500/20" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h2 className="text-white font-medium truncate">
-                  {userData?.name || "User"}
-                </h2>
-                <p className="text-sm text-gray-400 truncate">
-                  {userData?.email || "user@example.com"}
-                </p>
-              </div>
-              <button
-                onClick={() => navigate("/settings")}
-                className="p-2 hover:bg-gray-700/50 rounded-lg transition-colors duration-200"
-              >
-                <FiSettings className="text-pink-500 w-5 h-5" />
-              </button>
-            </div>
-          </div>
+      <nav className="flex-1 space-y-6 overflow-y-auto p-4 scrollbar-thin scrollbar-track-slate-800 scrollbar-thumb-slate-700">
+        {/* Main Section */}
+        <div className="space-y-1">
+          <h2 className="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            Main
+          </h2>
+          {navItems
+            .filter(
+              (item) =>
+                item.section === "main" && item.requireAuth === isAuthenticated
+            )
+            .map((item) => (
+              <MenuItem
+                key={item.path}
+                icon={item.icon}
+                label={item.label}
+                isActive={location.pathname === item.path}
+                onClick={() => navigate(item.path)}
+              />
+            ))}
         </div>
-      )}
 
-      <nav className="flex-1 px-4 overflow-y-auto">
-        <ul className="space-y-2">
-          {navItems.map(
-            (item) => item.active && <NavItem key={item.name} item={item} />
-          )}
-        </ul>
+        {/* Money Management */}
+        <div className="space-y-1">
+          <h2 className="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            Money Management
+          </h2>
+          {navItems
+            .filter(
+              (item) =>
+                item.section === "money" && item.requireAuth === isAuthenticated
+            )
+            .map((item) => (
+              <MenuItem
+                key={item.path}
+                icon={item.icon}
+                label={item.label}
+                isActive={location.pathname === item.path}
+                onClick={() => navigate(item.path)}
+              />
+            ))}
+        </div>
+
+        {/* Planning */}
+        <div className="space-y-1">
+          <h2 className="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            Planning
+          </h2>
+          {navItems
+            .filter(
+              (item) =>
+                item.section === "planning" &&
+                item.requireAuth === isAuthenticated
+            )
+            .map((item) => (
+              <MenuItem
+                key={item.path}
+                icon={item.icon}
+                label={item.label}
+                isActive={location.pathname === item.path}
+                onClick={() => navigate(item.path)}
+              />
+            ))}
+        </div>
+
+        {/* Auth Section */}
+        {!isAuthenticated && (
+          <div className="space-y-1 border-t border-slate-800 pt-4">
+            {authItems.map((item) => (
+              <MenuItem
+                key={item.path}
+                icon={item.icon}
+                label={item.label}
+                isActive={location.pathname === item.path}
+                onClick={() => navigate(item.path)}
+              />
+            ))}
+          </div>
+        )}
       </nav>
 
       {isAuthenticated && (
-        <div className="p-4 border-t border-gray-800/50">
+        <div className="p-4 border-t border-slate-800/50 space-y-3">
+          <UserProfile user={userData} />
+
           <button
             onClick={handleLogout}
-            className="w-full flex items-center justify-center space-x-3 text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 rounded-xl px-6 py-3 transition-all duration-300"
+            className="w-full flex items-center gap-3 rounded-xl p-3 text-red-400 bg-red-500/10 hover:bg-red-500/20 hover:text-red-300 transition-colors"
           >
-            <FiLogOut className="w-5 h-5" />
-            <span className="font-medium">Logout</span>
+            <LogOut className="h-5 w-5" />
+            <span className="text-sm font-medium">Logout</span>
           </button>
         </div>
       )}
-    </div>
+    </>
+  );
+
+  return (
+    <>
+      {/* Mobile Menu Toggle */}
+      <div className="lg:hidden flex items-center justify-between h-16 px-4 border-b border-slate-800/50 bg-surface-900/95 backdrop-blur-xl">
+        <Logo textsize="text-xl" />
+        <button
+          onClick={() => setIsOpen(true)}
+          className="p-2 hover:bg-slate-800/50 rounded-xl text-slate-400 hover:text-slate-200 transition-colors"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+      </div>
+
+      {/* Desktop Sidebar */}
+      <aside className="hidden lg:flex w-64 flex-col border-r border-slate-800/50 bg-surface-900/95 backdrop-blur-xl">
+        {sidebarContent}
+      </aside>
+
+      {/* Mobile Sidebar */}
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsOpen(false)}
+              className="lg:hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+            />
+            <motion.aside
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 20 }}
+              className="fixed inset-y-0 right-0 z-50 w-72 flex flex-col bg-surface-900/95 backdrop-blur-xl"
+            >
+              {sidebarContent}
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+    </>
   );
 };
 
