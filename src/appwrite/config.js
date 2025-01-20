@@ -32,11 +32,10 @@ export class AppService {
     description,
     paymentMethod,
     date,
+    status,
     userId,
   }) {
     try {
-      const formattedDate = new Date(date).toISOString().split("T")[0];
-
       return await this.databases.createDocument(
         conf.appwriteDatabaseId,
         conf.appwriteExpensesCollectionId,
@@ -47,7 +46,8 @@ export class AppService {
           category,
           description,
           paymentMethod,
-          date: formattedDate,
+          date,
+          status,
           userId,
         },
         [
@@ -68,7 +68,7 @@ export class AppService {
       return await this.databases.listDocuments(
         conf.appwriteDatabaseId,
         conf.appwriteExpensesCollectionId,
-        [Query.equal("userId", userId)]
+        [Query.equal("userId", userId), Query.orderDesc("$createdAt")]
       );
     } catch (error) {
       console.error("Appwrite service :: getAllExpenses :: error", error);
@@ -467,20 +467,157 @@ export class AppService {
     );
   }
 
+  // BUDGETS MANAGEMENT
+  async createBudget(data) {
+    try {
+      const promise = await this.databases.createDocument(
+        conf.appwriteDatabaseId,
+        conf.appwriteBudgetsCollectionId,
+        ID.unique(),
+        {
+          userId: data.userId,
+          category: data.category,
+          amount: data.amount,
+          totalBudget: data.totalBudget,
+          month: new Date().toLocaleString("default", { month: "long" }),
+          year: new Date().getFullYear(),
+        }
+      );
+      return promise;
+    } catch (error) {
+      console.error("Appwrite service :: createBudget :: error", error);
+      throw error;
+    }
+  }
+
+  // Get budgets for current month
+  async getCurrentBudgets(userId) {
+    try {
+      if (!userId) {
+        throw new Error("User ID is required");
+      }
+
+      const currentMonth = new Date().toLocaleString("default", {
+        month: "long",
+      });
+      const currentYear = new Date().getFullYear();
+
+      const response = await this.databases.listDocuments(
+        conf.appwriteDatabaseId,
+        conf.appwriteBudgetsCollectionId,
+        [
+          Query.equal("userId", userId),
+          Query.equal("month", currentMonth),
+          Query.equal("year", currentYear),
+        ]
+      );
+      return response;
+    } catch (error) {
+      console.error("Appwrite service :: getCurrentBudgets :: error", error);
+      throw error;
+    }
+  }
+
+  // Update budget
+  async updateBudget(budgetId, data) {
+    try {
+      const promise = await this.databases.updateDocument(
+        conf.appwriteDatabaseId,
+        conf.appwriteBudgetsCollectionId,
+        budgetId,
+        {
+          category: data.category,
+          amount: data.amount,
+          totalBudget: data.totalBudget,
+        }
+      );
+      return promise;
+    } catch (error) {
+      console.error("Appwrite service :: updateBudget :: error", error);
+      throw error;
+    }
+  }
+
+  // Delete budget
+  async deleteBudget(budgetId) {
+    try {
+      await this.databases.deleteDocument(
+        conf.appwriteDatabaseId,
+        conf.appwriteBudgetsCollectionId,
+        budgetId
+      );
+      return true;
+    } catch (error) {
+      console.error("Appwrite service :: deleteBudget :: error", error);
+      throw error;
+    }
+  }
+
+  // Get budget history
+  async getBudgetHistory(userId, months = 3) {
+    try {
+      const promise = await this.databases.listDocuments(
+        conf.appwriteDatabaseId,
+        conf.appwriteBudgetsCollectionId,
+        [
+          Query.equal("userId", userId),
+          Query.orderDesc("year"),
+          Query.orderDesc("$createdAt"),
+          Query.limit(100),
+        ]
+      );
+      return promise;
+    } catch (error) {
+      console.error("Appwrite service :: getBudgetHistory :: error", error);
+      throw error;
+    }
+  }
+
   // UTILITY METHODS
 
   //get all categories
-  async getAllCategories() {
+  async getAllExpenseCategories(userId) {
     try {
-      const expenses = await this.getAllExpenses();
-      const incomes = await this.getAllIncomes();
-      const categories = [
-        ...new Set([
-          ...expenses.documents.map((expense) => expense.category),
-          ...incomes.documents.map((income) => income.category),
-        ]),
-      ];
-      return categories;
+      // First get all expenses for the user
+      const expenses = await this.getAllExpenses(userId);
+
+      if (!expenses || !expenses.documents) {
+        return [];
+      }
+
+      // Calculate totals and percentages for each category
+      const categoryTotals = expenses.documents.reduce((acc, expense) => {
+        const category = expense.category;
+        if (!acc[category]) {
+          acc[category] = {
+            name: category,
+            amount: 0,
+            count: 0,
+            percentage: 0,
+          };
+        }
+        acc[category].amount += parseFloat(expense.amount);
+        acc[category].count += 1;
+        return acc;
+      }, {});
+
+      // Calculate total expenses
+      const totalExpenses = Object.values(categoryTotals).reduce(
+        (sum, cat) => sum + cat.amount,
+        0
+      );
+
+      // Calculate percentages and format amounts
+      const categories = Object.values(categoryTotals).map((category) => ({
+        ...category,
+        amount: parseFloat(category.amount.toFixed(2)),
+        percentage: parseFloat(
+          ((category.amount / totalExpenses) * 100).toFixed(1)
+        ),
+      }));
+
+      // Sort by amount in descending order
+      return categories.sort((a, b) => b.amount - a.amount);
     } catch (error) {
       console.error("Appwrite service :: getAllCategories :: error", error);
       throw error;

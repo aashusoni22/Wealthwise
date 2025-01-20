@@ -1,6 +1,5 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { LuLogIn } from "react-icons/lu";
 import { useDispatch } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import { showToast } from "./Toast";
@@ -20,20 +19,33 @@ const Login = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const login = async (data) => {
+  const handleLogin = async (formData) => {
     try {
-      const session = await authService.login(data);
-      if (session) {
-        const userData = await authService.getCurrentUser();
-        if (userData) dispatch(authLogin(userData));
+      const userData = await authService.login(formData);
+      if (userData) {
+        dispatch(authLogin(userData));
         navigate("/");
-        reset();
       }
     } catch (error) {
       showToast("Failed to login", "error");
       reset();
     }
   };
+
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        const userData = await authService.getCurrentUser();
+        if (userData) {
+          dispatch(login(userData));
+        }
+      } catch (error) {
+        console.error("Error initializing auth:", error);
+      }
+    };
+
+    initAuth();
+  }, []);
 
   return (
     <div className="min-h-[90vh] flex items-center justify-center bg-surface-900 px-4 py-12 sm:px-6 lg:px-8">
@@ -48,8 +60,8 @@ const Login = () => {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit(login)} className="mt-8 space-y-6">
-          <div className="space-y-4 rounded-lg bg-surface-800/30 p-8 shadow-2xl backdrop-blur">
+        <form onSubmit={handleSubmit(handleLogin)} className="mt-8 space-y-6">
+          <div className="space-y-4 rounded-lg p-8 backdrop-blur">
             <div>
               <Input
                 type="email"

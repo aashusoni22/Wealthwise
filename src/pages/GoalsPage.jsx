@@ -18,7 +18,7 @@ import Goals from "../components/goals/Goals";
 
 const GoalsPage = () => {
   return (
-    <div className="min-h-screen text-slate-100">
+    <div className="min-h-[90vh] p-6 text-slate-100">
       <Goals />
     </div>
   );

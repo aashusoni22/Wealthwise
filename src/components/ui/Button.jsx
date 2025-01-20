@@ -4,7 +4,7 @@ import Loader from "./Loader";
 
 const variants = {
   primary:
-    "bg-primary-500 text-white hover:bg-primary-600 focus:ring-primary-500",
+    "bg-primary-600 text-white hover:bg-primary-600 focus:ring-primary-500",
   secondary:
     "bg-surface-700 text-surface-50 hover:bg-surface-600 focus:ring-surface-500",
   danger: "bg-red-500 text-white hover:bg-red-600 focus:ring-red-500",

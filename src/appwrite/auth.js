@@ -38,12 +38,11 @@ export class AuthService {
     try {
       const currentUser = await this.getCurrentUser();
       if (currentUser) {
-        console.log("User is already logged in:", currentUser);
-        return currentUser; // Use existing session
+        return currentUser;
       }
 
-      // If no session exists, create a new one
-      return await this.account.createEmailPasswordSession(email, password);
+      await this.account.createEmailPasswordSession(email, password);
+      return await this.getCurrentUser();
     } catch (error) {
       if (error.message.includes("session is active")) {
         console.log(

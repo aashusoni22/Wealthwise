@@ -17,6 +17,9 @@ const conf = {
   appwriteReceiptsBucketId: String(
     import.meta.env.VITE_APPWRITE_RECEIPTS_BUCKET_ID
   ),
+  appwriteBudgetsCollectionId: String(
+    import.meta.env.VITE_APPWRITE_BUDGETS_COLLECTION_ID
+  ),
 };
 
 export default conf;

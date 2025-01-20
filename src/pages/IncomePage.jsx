@@ -164,15 +164,6 @@ const IncomePage = () => {
     );
   };
 
-  const handleDeleteIncomes = () => {
-    const updatedIncomes = incomes.filter(
-      (income) => !selectedIncomes.includes(income.id)
-    );
-    setIncomes(updatedIncomes);
-    setFilteredIncomes(updatedIncomes);
-    setSelectedIncomes([]);
-  };
-
   const filterIncomes = () => {
     const filtered = incomes.filter((income) => {
       if (sourceFilter && income.source !== sourceFilter) return false;
@@ -206,12 +197,10 @@ const IncomePage = () => {
   }
 
   return (
-    <div className="min-h-screen lg:py-6 text-slate-100">
+    <div className="min-h-[90vh] p-6 text-slate-100">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/50 mb-8 rounded-2xl backdrop-blur-sm">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-100">
-            Income Overview
-          </h1>
+          <h1 className="text-3xl font-bold text-white">Income Dashboard</h1>
           <p className="text-slate-400 mt-1">
             Keep track of your income patterns and manage your finances
             effectively
@@ -240,8 +229,10 @@ const IncomePage = () => {
         <div className="grid grid-cols-12 gap-6">
           {/* Left Sidebar */}
           <div className="col-span-12 lg:col-span-3 space-y-6">
+            {/* Quick Actions */}
+
             {/* Category Distribution */}
-            <div className="bg-surface-800/20 lg:min-h-[45rem] rounded-2xl backdrop-blur-sm border border-slate-800/50 p-6">
+            <div className="bg-surface-800/20 lg:min-h-auto rounded-2xl backdrop-blur-sm border border-slate-800/50 p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-slate-100">
                   Sources
@@ -455,12 +446,6 @@ const IncomePage = () => {
                   onClick={handleIncomeSubmit}
                 />
               )}
-
-              <div className="pt-4 flex justify-center">
-                <button className="text-sm text-blue-500 hover:text-blue-400 transition-colors">
-                  View All Transactions
-                </button>
-              </div>
             </div>
           </div>
         </div>

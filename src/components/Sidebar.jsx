@@ -6,27 +6,17 @@ import { logout } from "../store/authSlice";
 import authService from "../appwrite/auth";
 import { showToast } from "./Toast";
 import Logo from "./Logo";
-import profile from "../assets/profile.png";
 import {
   Menu,
-  X,
   LayoutDashboard,
   Wallet,
-  PiggyBank,
   TrendingUp,
   LogOut,
-  Settings,
-  ChevronRight,
   LogIn,
   UserPlus,
   ChevronLeft,
-  CircleDollarSign,
-  BarChart3,
   PieChart,
   Target,
-  FileBarChart,
-  Tags,
-  Calendar,
   User,
 } from "lucide-react";
 
@@ -74,7 +64,7 @@ const UserProfile = ({ user }) => (
         {user?.name || "Guest User"}
       </h2>
       <p className="truncate text-xs text-slate-400">
-        {user?.email || "user@example.com"}
+        {user?.email || "Not signed in"}
       </p>
     </div>
 
@@ -165,9 +155,11 @@ const Sidebar = () => {
       <nav className="flex-1 space-y-6 overflow-y-auto p-4 scrollbar-thin scrollbar-track-slate-800 scrollbar-thumb-slate-700">
         {/* Main Section */}
         <div className="space-y-1">
-          <h2 className="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-            Main
-          </h2>
+          {isAuthenticated && (
+            <h2 className="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+              Main
+            </h2>
+          )}
           {navItems
             .filter(
               (item) =>
@@ -186,9 +178,11 @@ const Sidebar = () => {
 
         {/* Money Management */}
         <div className="space-y-1">
-          <h2 className="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-            Money Management
-          </h2>
+          {isAuthenticated && (
+            <h2 className="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+              Money Management
+            </h2>
+          )}
           {navItems
             .filter(
               (item) =>
@@ -207,9 +201,11 @@ const Sidebar = () => {
 
         {/* Planning */}
         <div className="space-y-1">
-          <h2 className="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-            Planning
-          </h2>
+          {isAuthenticated && (
+            <h2 className="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+              Planning
+            </h2>
+          )}
           {navItems
             .filter(
               (item) =>
@@ -229,7 +225,11 @@ const Sidebar = () => {
 
         {/* Auth Section */}
         {!isAuthenticated && (
-          <div className="space-y-1 border-t border-slate-800 pt-4">
+          <div
+            className={`space-y-1 ${
+              isAuthenticated && "border-t border-slate-800  pt-4"
+            }`}
+          >
             {authItems.map((item) => (
               <MenuItem
                 key={item.path}

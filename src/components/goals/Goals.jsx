@@ -26,7 +26,7 @@ const GoalCard = ({ goal }) => {
   );
 
   return (
-    <div className="bg-surface-800/50 backdrop-blur-sm border border-slate-800/50 rounded-2xl hover:bg-slate-800/50 transition-all group">
+    <div className="bg-surface-800/20 backdrop-blur-sm border border-slate-800/50 rounded-2xl hover:bg-slate-800/50 transition-all group">
       <div className="p-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
@@ -178,9 +178,7 @@ const Goals = () => {
       {/* Goals Section */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-100">
-            Goals Overview
-          </h1>
+          <h1 className="text-3xl font-bold text-white">Goals Dashboard</h1>
           <p className="text-slate-400 mt-1">
             Track and manage your objectives
           </p>
@@ -188,7 +186,7 @@ const Goals = () => {
 
         <button
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-primary-500/10 hover:bg-primary-500/20 text-primary-500 rounded-xl transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-xl transition-colors"
         >
           <Plus className="w-5 h-5" />
           <span>New Goal</span>
@@ -197,7 +195,7 @@ const Goals = () => {
 
       {/* Header Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-surface-800/50 backdrop-blur-sm border border-slate-800/50 rounded-2xl p-6">
+        <div className="bg-surface-800/20 backdrop-blur-sm border border-slate-800/50 rounded-2xl p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-slate-400">Total Goals</p>
@@ -213,7 +211,7 @@ const Goals = () => {
           </div>
         </div>
 
-        <div className="bg-surface-800/50 backdrop-blur-sm border border-slate-800/50 rounded-2xl p-6">
+        <div className="bg-surface-800/20 backdrop-blur-sm border border-slate-800/50 rounded-2xl p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-slate-400">In Progress</p>
@@ -231,7 +229,7 @@ const Goals = () => {
           </div>
         </div>
 
-        <div className="bg-surface-800/50 backdrop-blur-sm border border-slate-800/50 rounded-2xl p-6">
+        <div className="bg-surface-800/20 backdrop-blur-sm border border-slate-800/50 rounded-2xl p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-slate-400">Completed</p>

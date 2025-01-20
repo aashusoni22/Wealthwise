@@ -62,7 +62,7 @@ function Signup() {
         </div>
 
         <form onSubmit={handleSubmit(create)} className="mt-8 space-y-6">
-          <div className="space-y-4 rounded-lg bg-surface-800/30 p-8 shadow-2xl backdrop-blur">
+          <div className="space-y-4 rounded-lg p-8 backdrop-blur">
             <div>
               <Input
                 type="text"

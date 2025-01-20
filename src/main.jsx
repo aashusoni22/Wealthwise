@@ -3,7 +3,13 @@ import { createRoot } from "react-dom/client";
 import App from "./App.jsx";
 import "./index.css";
 import { Login, SignUp, AuthLayout } from "./components";
-import { Dashboard, ExpensePage, IncomePage, GoalsPage } from "./pages";
+import {
+  Dashboard,
+  ExpensePage,
+  IncomePage,
+  GoalsPage,
+  BudgetPage,
+} from "./pages";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { Provider } from "react-redux";
 import store from "./store/store.js";
@@ -58,6 +64,14 @@ const router = createBrowserRouter([
         element: (
           <AuthLayout authentication={true}>
             <GoalsPage />
+          </AuthLayout>
+        ),
+      },
+      {
+        path: "/budgets",
+        element: (
+          <AuthLayout authentication={true}>
+            <BudgetPage />
           </AuthLayout>
         ),
       },
