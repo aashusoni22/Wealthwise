@@ -1,5 +1,6 @@
 import conf from "../conf/conf";
 import { Client, Account, ID } from "appwrite";
+import { SecurityUtils } from "../utils/security/index";
 
 export class AuthService {
   client = new Client();
@@ -36,28 +37,23 @@ export class AuthService {
   // login with email and password
   async login({ email, password }) {
     try {
+      const sanitizedEmail = SecurityUtils.sanitizeInput(email);
+
       const currentUser = await this.getCurrentUser();
       if (currentUser) {
         return currentUser;
       }
 
-      await this.account.createEmailPasswordSession(email, password);
-      return await this.getCurrentUser();
-    } catch (error) {
-      if (error.message.includes("session is active")) {
-        console.log(
-          "Session already active. Logging out and logging in again."
-        );
-        await this.logout(); // Log out the current session
-        return await this.account.createEmailPasswordSession(email, password);
-      } else if (error.code === 401) {
-        // Handle unauthorized errors
-        console.log("Invalid login credentials");
-        throw new Error("Invalid email or password.");
-      } else {
-        console.log("Appwrite service :: login :: error", error);
-        throw error; // Re-throw the error for further handling
+      await this.account.createEmailPasswordSession(sanitizedEmail, password);
+      const user = await this.getCurrentUser();
+
+      if (user) {
+        SecurityUtils.setSession(); // Set session when login successful
       }
+
+      return user;
+    } catch (error) {
+      throw error;
     }
   }
 
@@ -79,28 +75,57 @@ export class AuthService {
   }
 
   // Method to get the current user ID
-
   async getCurrentUserId() {
     try {
       const user = await this.account.get();
       return user.$id;
     } catch (error) {
       console.error("Appwrite service :: getCurrentUserId :: error", error);
-      return null; // Return null if there's an issue (e.g., not logged in)
+      return null;
     }
   }
 
   // logout user
   async logout() {
     try {
-      const currentUser = await this.getCurrentUser(); // Check if user is logged in
-      if (!currentUser) {
-        console.log("No active session found. Skipping logout.");
-        return;
-      }
-      await this.account.deleteSessions(); // Only call this if a session exists
+      await this.account.deleteSessions();
+      SecurityUtils.clearSession();
     } catch (error) {
-      console.log("Appwrite service :: logout :: error", error);
+      console.error("Appwrite service :: logout :: error", error);
+    }
+  }
+
+  // forgot password
+  async forgotPassword(email) {
+    try {
+      await this.account.createRecovery(
+        email,
+        "http://localhost:5173/reset-password" // Change this URL based on your app's URL
+      );
+      return true;
+    } catch (error) {
+      console.error("Appwrite service :: forgotPassword :: error", error);
+      throw error;
+    }
+  }
+
+  // reset password
+  async resetPassword(userId, secret, newPassword, confirmPassword) {
+    try {
+      if (newPassword !== confirmPassword) {
+        throw new Error("Passwords do not match");
+      }
+
+      await this.account.updateRecovery(
+        userId,
+        secret,
+        newPassword,
+        confirmPassword
+      );
+      return true;
+    } catch (error) {
+      console.error("Appwrite service :: resetPassword :: error", error);
+      throw error;
     }
   }
 }

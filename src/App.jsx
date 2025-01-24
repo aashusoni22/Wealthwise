@@ -5,6 +5,7 @@ import authService from "./appwrite/auth";
 import { Outlet } from "react-router-dom";
 import Sidebar from "./components/Sidebar";
 import Loader from "./components/ui/Loader";
+import SecurityAlerts from "./components/SecurityAlerts";
 
 const App = () => {
   const dispatch = useDispatch();
@@ -44,6 +45,7 @@ const App = () => {
         <Sidebar />
         <main className="flex-1 overflow-y-auto">
           <div className="container mx-auto px-6 py-8">
+            <SecurityAlerts />
             <Outlet />
           </div>
         </main>
