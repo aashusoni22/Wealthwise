@@ -1,18 +1,17 @@
 import React, { useState } from "react";
-import { Calendar, ArrowRight } from "lucide-react";
+import { Calendar, ArrowRight, Wallet } from "lucide-react";
 import Button from "../ui/Button";
 import TransactionDropdown from "./TransactionDropdown";
-import ExpenseModal from "./ExpenseModal";
+import IncomeModal from "./IncomeModal";
+import { sourceConfig } from "../../utils/sourceConfig";
 import appService from "../../appwrite/config";
 import authService from "../../appwrite/auth";
 import { showToast } from "../Toast";
 
-const TransactionList = ({
+const IncomeList = ({
   transactions,
-  categoryConfig,
-  formatRelativeDate,
   onViewAll,
-  onAddExpense,
+  onAddIncome,
   onTransactionUpdated,
 }) => {
   const [editingTransaction, setEditingTransaction] = useState(null);
@@ -24,53 +23,46 @@ const TransactionList = ({
   const handleDelete = async (transactionId) => {
     try {
       const userId = await authService.getCurrentUserId();
-      if (!userId) {
-        showToast("Please login to delete transactions", "error");
-        return;
-      }
+      if (!userId) return;
 
       const confirmed = window.confirm(
         "Are you sure you want to delete this transaction?"
       );
       if (!confirmed) return;
 
-      await appService.deleteExpense(transactionId, userId);
+      await appService.deleteIncome(transactionId);
       showToast("Transaction deleted successfully", "success");
-      if (onTransactionUpdated) {
-        await onTransactionUpdated();
-      }
+      if (onTransactionUpdated) onTransactionUpdated();
     } catch (error) {
       console.error("Error deleting transaction:", error);
       showToast("Failed to delete transaction", "error");
     }
   };
 
-  const handleUpdateExpense = async (data) => {
+  const handleUpdateIncome = async (data) => {
     try {
       const userId = await authService.getCurrentUserId();
-      if (!userId) {
-        showToast("Please login to update transactions", "error");
-        return;
-      }
+      if (!userId) return;
 
-      await appService.updateExpense(
-        editingTransaction.$id,
-        {
-          ...data,
-          amount: parseFloat(data.amount),
-        },
-        userId
-      );
+      await appService.updateIncome(editingTransaction.$id, {
+        ...data,
+        amount: parseFloat(data.amount),
+      });
 
-      showToast("Transaction updated successfully", "success");
       setEditingTransaction(null);
-      if (onTransactionUpdated) {
-        await onTransactionUpdated();
-      }
+      if (onTransactionUpdated) onTransactionUpdated();
     } catch (error) {
       console.error("Error updating transaction:", error);
       showToast("Failed to update transaction", "error");
     }
+  };
+
+  const formatDate = (date) => {
+    return new Intl.DateTimeFormat("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    }).format(new Date(date));
   };
 
   return (
@@ -89,7 +81,7 @@ const TransactionList = ({
 
           <button
             onClick={onViewAll}
-            className="text-sm text-primary-500 hover:text-primary-400 transition-colors flex items-center gap-1 self-end sm:self-auto"
+            className="text-sm text-emerald-500 hover:text-emerald-400 transition-colors flex items-center gap-1 self-end sm:self-auto"
           >
             View All Transactions
             <ArrowRight className="w-4 h-4" />
@@ -105,51 +97,52 @@ const TransactionList = ({
               <Calendar className="w-4 h-4 mr-2" /> No transactions to show
             </p>
             <Button
-              variant="primary"
+              variant="emerald"
               className="text-base font-normal"
-              onClick={onAddExpense}
+              onClick={onAddIncome}
             >
-              Lets add some
+              Let's add some
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </div>
         ) : (
-          transactions.map((expense) => {
-            const category =
-              categoryConfig[expense.category] || categoryConfig.Other;
-            const IconComponent = category.icon;
-            const dateInfo = formatRelativeDate(expense.date);
+          transactions.map((income) => {
+            const source = sourceConfig[income.source] || sourceConfig.Other;
+            const IconComponent = source?.icon || Wallet;
 
             return (
               <div
-                key={expense.$id}
+                key={income.$id}
                 className="flex flex-col sm:flex-row sm:items-center justify-between py-4 hover:bg-slate-800/40 rounded-xl px-4 transition-colors group gap-4 sm:gap-6"
               >
                 {/* Left Section - Icon and Details */}
                 <div className="flex items-center gap-4">
                   <div
-                    className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl ${category.bgColor} flex items-center justify-center group-hover:scale-105 transition-transform shrink-0`}
+                    className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl ${
+                      source?.bgColor || "bg-slate-600/20"
+                    } flex items-center justify-center group-hover:scale-105 transition-transform shrink-0`}
                   >
                     <IconComponent
-                      className={`w-5 h-5 sm:w-6 sm:h-6 ${category.textColor}`}
+                      className={`w-5 h-5 sm:w-6 sm:h-6 ${
+                        source?.textColor || "text-slate-400"
+                      }`}
                     />
                   </div>
                   <div className="min-w-0 flex-1">
                     <h3 className="font-medium text-slate-200 text-sm sm:text-base truncate">
-                      {expense.title}
+                      {income.title}
                     </h3>
                     <div className="flex items-center flex-wrap gap-2 mt-1">
                       <span
-                        className={`text-xs px-2 py-1 rounded-lg ${category.badgeBg} ${category.textColor}`}
+                        className={`text-xs px-2 py-1 rounded-lg ${
+                          source?.badgeBg || "bg-slate-600/10"
+                        } ${source?.textColor || "text-slate-400"}`}
                       >
-                        {expense.category}
+                        {income.source}
                       </span>
                       <span className="text-xs sm:text-sm text-slate-400">
-                        {dateInfo.formatted}
+                        {formatDate(income.date)}
                       </span>
-                      {dateInfo.isFuture && (
-                        <span className="text-xs text-amber-500">Planned</span>
-                      )}
                     </div>
                   </div>
                 </div>
@@ -157,18 +150,18 @@ const TransactionList = ({
                 {/* Right Section - Amount and Actions */}
                 <div className="flex items-center justify-between sm:justify-end gap-4 sm:gap-6 mt-2 sm:mt-0">
                   <div className="text-left sm:text-right">
-                    <p className="text-base sm:text-lg font-medium text-slate-200">
-                      ${parseFloat(expense.amount).toFixed(2)}
+                    <p className="text-base sm:text-lg font-medium text-emerald-500">
+                      +${parseFloat(income.amount).toFixed(2)}
                     </p>
-                    {expense.paymentMethod && (
+                    {income.description && (
                       <p className="text-xs sm:text-sm text-slate-400 truncate max-w-[120px] sm:max-w-[200px]">
-                        {expense.paymentMethod}
+                        {income.description}
                       </p>
                     )}
                   </div>
                   <TransactionDropdown
-                    onEdit={() => handleEdit(expense)}
-                    onDelete={() => handleDelete(expense.$id)}
+                    onEdit={() => handleEdit(income)}
+                    onDelete={() => handleDelete(income.$id)}
                   />
                 </div>
               </div>
@@ -179,9 +172,9 @@ const TransactionList = ({
 
       {/* Edit Modal */}
       {editingTransaction && (
-        <ExpenseModal
+        <IncomeModal
           onClose={() => setEditingTransaction(null)}
-          onSubmit={handleUpdateExpense}
+          onSubmit={handleUpdateIncome}
           initialData={editingTransaction}
           mode="edit"
         />
@@ -190,4 +183,4 @@ const TransactionList = ({
   );
 };
 
-export default TransactionList;
+export default IncomeList;

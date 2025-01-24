@@ -5,17 +5,16 @@ import { CheckCircle, XCircle, AlertCircle, Info } from "lucide-react";
 const Toast = () => {
   return (
     <Toaster
-      position="top-center"
+      position="top-right"
       reverseOrder={false}
       gutter={12}
       containerClassName="font-sans"
       toastOptions={{
         // Default options
-        duration: 4000,
+        duration: 2000,
         className: "!bg-surface-900/95 !text-slate-100 backdrop-blur-lg",
         style: {
           padding: "16px",
-          border: "1px solid rgba(148, 163, 184, 0.1)",
           borderRadius: "12px",
           maxWidth: "400px",
           fontSize: "14px",

@@ -3,43 +3,35 @@ import {
   X,
   Search,
   Filter,
+  FilterX,
   ChevronDown,
   MoreHorizontal,
-  CalendarDays,
   ArrowUpDown,
   FileDown,
-  Share2,
   Calendar,
   ArrowUp,
   ArrowDown,
-  FilterX,
+  Wallet,
 } from "lucide-react";
+import { sourceConfig } from "../../utils/sourceConfig";
 
-const TransactionsModal = ({
-  isOpen,
-  onClose,
-  transactions,
-  categoryConfig,
-  exportToCSV,
-}) => {
+const TransactionsModal = ({ isOpen, onClose, transactions, exportToCSV }) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedSource, setSelectedSource] = useState("all");
   const [dateRange, setDateRange] = useState("all");
+  const [showFilters, setShowFilters] = useState(false);
   const [sortConfig, setSortConfig] = useState({
     key: "date",
     direction: "desc",
   });
-  const [showFilters, setShowFilters] = useState(false);
 
-  // Sort options
   const sortOptions = [
     { label: "Date", key: "date" },
     { label: "Amount", key: "amount" },
     { label: "Title", key: "title" },
-    { label: "Category", key: "category" },
+    { label: "Source", key: "source" },
   ];
 
-  // Handle sort
   const handleSort = (key) => {
     setSortConfig((prev) => ({
       key,
@@ -47,15 +39,14 @@ const TransactionsModal = ({
     }));
   };
 
-  // Filtered and sorted transactions logic
   const filteredAndSortedTransactions = useMemo(() => {
     let filtered = transactions.filter((transaction) => {
       const matchesSearch =
         transaction.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        transaction.category.toLowerCase().includes(searchTerm.toLowerCase());
+        transaction.source.toLowerCase().includes(searchTerm.toLowerCase());
 
-      const matchesCategory =
-        selectedCategory === "all" || transaction.category === selectedCategory;
+      const matchesSource =
+        selectedSource === "all" || transaction.source === selectedSource;
 
       let matchesDate = true;
       const transactionDate = new Date(transaction.date);
@@ -81,7 +72,7 @@ const TransactionsModal = ({
           matchesDate = true;
       }
 
-      return matchesSearch && matchesCategory && matchesDate;
+      return matchesSearch && matchesSource && matchesDate;
     });
 
     return filtered.sort((a, b) => {
@@ -96,22 +87,22 @@ const TransactionsModal = ({
         case "title":
           comparison = a.title.localeCompare(b.title);
           break;
-        case "category":
-          comparison = a.category.localeCompare(b.category);
+        case "source":
+          comparison = a.source.localeCompare(b.source);
           break;
         default:
           comparison = 0;
       }
       return sortConfig.direction === "asc" ? comparison : -comparison;
     });
-  }, [transactions, searchTerm, selectedCategory, dateRange, sortConfig]);
+  }, [transactions, searchTerm, selectedSource, dateRange, sortConfig]);
 
   const handleReset = () => {
     setSearchTerm("");
-    setSelectedCategory("all");
+    setSelectedSource("all");
     setDateRange("all");
-    setSortConfig({ key: "", direction: "" });
     setShowFilters(false);
+    setSortConfig({ key: "date", direction: "desc" });
     onClose();
   };
 
@@ -134,7 +125,7 @@ const TransactionsModal = ({
         <div className="flex items-center justify-between px-4 sm:px-8 py-4 sm:py-6 border-b border-surface-800">
           <div>
             <h2 className="text-lg sm:text-xl font-semibold text-surface-100">
-              All Transactions
+              All Income Transactions
             </h2>
             <p className="text-sm text-surface-400 mt-1">
               {filteredAndSortedTransactions.length} transactions found
@@ -187,16 +178,16 @@ const TransactionsModal = ({
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
-              {/* Category Filter */}
+              {/* Source Filter */}
               <select
                 className="pl-4 pr-10 py-2 bg-surface-800 rounded-xl border border-surface-700 text-surface-100 appearance-none cursor-pointer"
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
+                value={selectedSource}
+                onChange={(e) => setSelectedSource(e.target.value)}
               >
-                <option value="all">All Categories</option>
-                {Object.keys(categoryConfig).map((category) => (
-                  <option key={category} value={category}>
-                    {category}
+                <option value="all">All Sources</option>
+                {Object.keys(sourceConfig).map((source) => (
+                  <option key={source} value={source}>
+                    {source}
                   </option>
                 ))}
               </select>
@@ -244,21 +235,25 @@ const TransactionsModal = ({
               </div>
             ) : (
               filteredAndSortedTransactions.map((transaction) => {
-                const category =
-                  categoryConfig[transaction.category] || categoryConfig.Other;
-                const IconComponent = category.icon;
+                const source =
+                  sourceConfig[transaction.source] || sourceConfig.Other;
+                const IconComponent = source?.icon || Wallet;
 
                 return (
                   <div
-                    key={transaction.id}
+                    key={transaction.$id}
                     className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl hover:bg-surface-800/50 transition-colors group gap-4 sm:gap-6"
                   >
                     <div className="flex items-center gap-4">
                       <div
-                        className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl ${category.bgColor} flex items-center justify-center shrink-0`}
+                        className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl ${
+                          source?.bgColor || "bg-slate-600/20"
+                        } flex items-center justify-center shrink-0`}
                       >
                         <IconComponent
-                          className={`w-5 h-5 sm:w-6 sm:h-6 ${category.textColor}`}
+                          className={`w-5 h-5 sm:w-6 sm:h-6 ${
+                            source?.textColor || "text-slate-400"
+                          }`}
                         />
                       </div>
 
@@ -268,9 +263,11 @@ const TransactionsModal = ({
                         </h3>
                         <div className="flex items-center flex-wrap gap-2 mt-1">
                           <span
-                            className={`text-xs px-2 py-1 rounded-lg ${category.badgeBg} ${category.textColor}`}
+                            className={`text-xs px-2 py-1 rounded-lg ${
+                              source?.bgColor || "bg-slate-600/20"
+                            } ${source?.textColor || "text-emerald-500"}`}
                           >
-                            {transaction.category}
+                            {transaction.source}
                           </span>
                           <span className="text-xs sm:text-sm text-surface-400">
                             {new Date(transaction.date).toLocaleDateString(
@@ -288,12 +285,12 @@ const TransactionsModal = ({
 
                     <div className="flex items-center justify-between sm:justify-end gap-4 sm:gap-6">
                       <div className="text-left sm:text-right">
-                        <p className="text-base sm:text-lg font-medium text-surface-200">
-                          ${parseFloat(transaction.amount).toFixed(2)}
+                        <p className="text-base sm:text-lg font-medium text-emerald-500">
+                          +${parseFloat(transaction.amount).toFixed(2)}
                         </p>
-                        {transaction.paymentMethod && (
-                          <p className="text-xs sm:text-sm text-surface-400">
-                            {transaction.paymentMethod}
+                        {transaction.description && (
+                          <p className="text-xs sm:text-sm text-surface-400 truncate max-w-[120px] sm:max-w-[200px]">
+                            {transaction.description}
                           </p>
                         )}
                       </div>

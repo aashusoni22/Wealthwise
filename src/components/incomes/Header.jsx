@@ -1,14 +1,13 @@
 import React from "react";
 import { Download, Plus } from "lucide-react";
 
-const Header = ({ onAddExpense, onExportCSV }) => {
+const Header = ({ onAddIncome, onExportCSV }) => {
   return (
     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 bg-slate-900/50 rounded-2xl backdrop-blur-sm">
       <div>
-        <h1 className="text-3xl font-bold text-white">Expense Dashboard</h1>
+        <h1 className="text-3xl font-bold text-white">Income Dashboard</h1>
         <p className="text-slate-400 mt-1">
-          Keep track of your spending patterns and manage your finances
-          effectively
+          Track your revenue streams and manage your income sources effectively
         </p>
       </div>
 
@@ -21,11 +20,11 @@ const Header = ({ onAddExpense, onExportCSV }) => {
         </button>
 
         <button
-          onClick={onAddExpense}
-          className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white rounded-xl transition-colors"
+          onClick={onAddIncome}
+          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl transition-colors"
         >
           <Plus className="w-5 h-5" />
-          Add Expense
+          Add Income
         </button>
       </div>
     </div>

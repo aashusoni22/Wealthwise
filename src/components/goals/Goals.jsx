@@ -1,264 +1,132 @@
-import React, { useEffect, useState } from "react";
-import {
-  Target,
-  Plus,
-  TrendingUp,
-  Book,
-  Award,
-  DollarSign,
-  MoreVertical,
-  ChevronUp,
-  CalendarRange,
-  BookA,
-  AwardIcon,
-  TrendingDown,
-  Loader2,
-} from "lucide-react";
-import appService from "../../appwrite/config";
-import authService from "../../appwrite/auth";
+import React, { useState, useMemo } from "react";
+import { Plus, Loader2 } from "lucide-react";
+import { useGoals } from "../../hooks/useGoals";
+import GoalsHeader from "./GoalsHeader";
+import GoalsStats from "./GoalsStats";
+import GoalsGrid from "./GoalsGrid";
+import GoalsFilter from "./GoalsFilter";
 import GoalModal from "./GoalModal";
-
-const GoalCard = ({ goal }) => {
-  const progress = (goal.current / goal.target) * 100;
-  const IconComponent = goal.icon;
-  const daysLeft = Math.ceil(
-    (new Date(goal.deadline) - new Date()) / (1000 * 60 * 60 * 24)
-  );
-
-  return (
-    <div className="bg-surface-800/20 backdrop-blur-sm border border-slate-800/50 rounded-2xl hover:bg-slate-800/50 transition-all group">
-      <div className="p-6">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <div className={`flex items-center gap-3 text-${goal.color}-500`}>
-            <div
-              className={`w-10 h-10 rounded-xl bg-${goal.color}-500/20 flex items-center justify-center`}
-            >
-              <IconComponent className="w-5 h-5" />
-            </div>
-            <span
-              className={`text-xs font-medium px-2.5 py-1 bg-${goal.color}-500/20 rounded-lg`}
-            >
-              {goal.category}
-            </span>
-          </div>
-          <button className="p-2 hover:bg-slate-700/50 rounded-lg opacity-0 group-hover:opacity-100 transition-all">
-            <MoreVertical className="w-5 h-5 text-slate-400" />
-          </button>
-        </div>
-
-        {/* Title and Progress */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-slate-100">{goal.title}</h3>
-
-          <div className="space-y-2">
-            <div className="flex items-end justify-between">
-              <div>
-                <p className="text-sm text-slate-400 mb-1">Progress</p>
-                <div className="text-2xl font-bold text-slate-100">
-                  {typeof goal.current === "number" && goal.current >= 1000
-                    ? `${(goal.current / 1000).toFixed(1)}k`
-                    : goal.current}
-                  <span className="text-sm text-slate-400 ml-1">
-                    /{" "}
-                    {typeof goal.target === "number" && goal.target >= 1000
-                      ? `${(goal.target / 1000).toFixed(1)}k`
-                      : goal.target}
-                  </span>
-                </div>
-              </div>
-              <div className={`text-lg font-semibold text-${goal.color}-500`}>
-                {Math.round(progress)}%
-              </div>
-            </div>
-
-            {/* Progress Bar */}
-            <div className="h-2 bg-slate-700/50 rounded-full overflow-hidden">
-              <div
-                className={`h-full bg-${goal.color}-500 rounded-full transition-all`}
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Footer */}
-      <div className="px-6 py-4 border-t border-slate-700/50 flex items-center justify-between">
-        <div className="flex items-center gap-2 text-sm text-slate-400">
-          <CalendarRange className="w-4 h-4" />
-          <span>{daysLeft} days left</span>
-        </div>
-        <div className="flex items-center gap-1 text-sm">
-          <ChevronUp className={`w-4 h-4 text-${goal.color}-500`} />
-          <span className={`text-${goal.color}-500`}>+2.5%</span>
-          <span className="text-slate-400">this week</span>
-        </div>
-      </div>
-    </div>
-  );
-};
+import GoalsEmpty from "./GoalsEmpty";
 
 const Goals = () => {
+  const {
+    loading,
+    goals,
+    addGoal,
+    updateGoal,
+    deleteGoal,
+    calculateGoalStats,
+  } = useGoals();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [goals, setGoals] = useState([]);
+  const [selectedGoal, setSelectedGoal] = useState(null);
+  const [filter, setFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const stats = calculateGoalStats();
 
-  const getGoals = async () => {
-    try {
-      const userId = await authService.getCurrentUserId();
-      if (!userId) return;
-      const response = await appService.getAllGoals(userId);
-      const fetchedGoals = response.documents || [];
-      setGoals(fetchedGoals);
-    } catch (err) {
-      console.log(err);
-    } finally {
-      setLoading(false);
+  const handleEditGoal = (goal) => {
+    setSelectedGoal(goal);
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteGoal = async (goal) => {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this goal?"
+    );
+    if (confirmed) {
+      try {
+        await deleteGoal(goal.$id);
+      } catch (error) {
+        console.error("Error deleting goal:", error);
+      }
     }
   };
 
-  useEffect(() => {
-    getGoals();
-  }, []);
+  const filteredGoals = useMemo(() => {
+    // First apply search filter
+    let filtered = goals;
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = goals.filter(
+        (goal) =>
+          goal.title.toLowerCase().includes(query) ||
+          goal.category.toLowerCase().includes(query) ||
+          goal.description?.toLowerCase().includes(query)
+      );
+    }
 
-  const goalsTemp = [
-    {
-      id: 1,
-      title: "Save for Down Payment",
-      category: "Financial",
-      target: 50000,
-      current: 35000,
-      deadline: "December 2024",
-      color: "blue",
-      icon: DollarSign,
-    },
-    {
-      id: 2,
-      title: "Read 24 Books",
-      category: "Personal",
-      target: 24,
-      current: 16,
-      deadline: "December 2024",
-      color: "purple",
-      icon: BookA,
-    },
-    {
-      id: 3,
-      title: "Launch Online Course",
-      category: "Career",
-      target: 100,
-      current: 65,
-      deadline: "September 2024",
-      color: "green",
-      icon: AwardIcon,
-    },
-    {
-      id: 4,
-      title: "Grow Investment Portfolio",
-      category: "Financial",
-      target: 100000,
-      current: 78000,
-      deadline: "December 2024",
-      color: "orange",
-      icon: TrendingUp,
-    },
-  ];
+    // Then apply category/status filter
+    if (filter === "all") return filtered;
+    if (filter === "active")
+      return filtered.filter(
+        (goal) => (goal.Progress / goal.target) * 100 < 100
+      );
+    if (filter === "completed")
+      return filtered.filter(
+        (goal) => (goal.Progress / goal.target) * 100 >= 100
+      );
+    if (filter === "due-soon") {
+      const thirtyDaysFromNow = new Date();
+      thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+      return filtered.filter(
+        (goal) => new Date(goal.duedate) <= thirtyDaysFromNow
+      );
+    }
+    return filtered;
+  }, [goals, filter, searchQuery]);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen ">
-        <Loader2 className="h-8 w-8 animate-spin text-teal-500" />
+      <div className="flex items-center justify-center h-[80vh]">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
+          <p className="text-slate-400">Loading your goals...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-[1600px] mx-auto lg:py-6 space-y-6">
-      {/* Goals Section */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-white">Goals Dashboard</h1>
-          <p className="text-slate-400 mt-1">
-            Track and manage your objectives
+    <div className="max-w-[1600px] mx-auto space-y-8">
+      <GoalsHeader
+        onNewGoal={() => setIsModalOpen(true)}
+        onSearch={setSearchQuery}
+        searchQuery={searchQuery}
+      />
+      <GoalsStats stats={stats} />
+      <GoalsFilter activeFilter={filter} onFilterChange={setFilter} />
+
+      {goals.length === 0 ? (
+        <GoalsEmpty onNewGoal={() => setIsModalOpen(true)} />
+      ) : filteredGoals.length === 0 ? (
+        <div className="flex flex-col items-center justify-center p-12 bg-slate-800/40 border border-slate-700/50 rounded-xl text-center">
+          <p className="text-lg text-slate-400">
+            No goals found matching "{searchQuery}"
           </p>
+          <button
+            onClick={() => setSearchQuery("")}
+            className="mt-4 text-primary-500 hover:text-primary-400"
+          >
+            Clear search
+          </button>
         </div>
+      ) : (
+        <GoalsGrid
+          goals={filteredGoals}
+          onEdit={handleEditGoal}
+          onDelete={handleDeleteGoal}
+        />
+      )}
 
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-xl transition-colors"
-        >
-          <Plus className="w-5 h-5" />
-          <span>New Goal</span>
-        </button>
-      </div>
-
-      {/* Header Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-surface-800/20 backdrop-blur-sm border border-slate-800/50 rounded-2xl p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-slate-400">Total Goals</p>
-              <p className="text-2xl font-semibold mt-1">{goals.length}</p>
-            </div>
-            <div className="bg-blue-500/20 p-3 rounded-xl">
-              <Target className="w-6 h-6 text-blue-500" />
-            </div>
-          </div>
-          <div className="mt-4 flex items-center gap-1 text-sm text-emerald-500">
-            <ChevronUp className="w-4 h-4" />
-            <span>3 new this month</span>
-          </div>
-        </div>
-
-        <div className="bg-surface-800/20 backdrop-blur-sm border border-slate-800/50 rounded-2xl p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-slate-400">In Progress</p>
-              <p className="text-2xl font-semibold mt-1">
-                {goals.filter((g) => (g.current / g.target) * 100 < 100).length}
-              </p>
-            </div>
-            <div className="bg-emerald-500/20 p-3 rounded-xl">
-              <TrendingUp className="w-6 h-6 text-emerald-500" />
-            </div>
-          </div>
-          <div className="mt-4 flex items-center gap-1 text-sm text-emerald-500">
-            <ChevronUp className="w-4 h-4" />
-            <span>On track</span>
-          </div>
-        </div>
-
-        <div className="bg-surface-800/20 backdrop-blur-sm border border-slate-800/50 rounded-2xl p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-slate-400">Completed</p>
-              <p className="text-2xl font-semibold mt-1">
-                {
-                  goals.filter((g) => (g.current / g.target) * 100 >= 100)
-                    .length
-                }
-              </p>
-            </div>
-            <div className="bg-violet-500/20 p-3 rounded-xl">
-              <Award className="w-6 h-6 text-violet-500" />
-            </div>
-          </div>
-          <div className="mt-4 flex items-center gap-1 text-sm text-violet-500">
-            <Award className="w-4 h-4" />
-            <span>Great progress!</span>
-          </div>
-        </div>
-      </div>
-
-      {isModalOpen && <GoalModal onClose={() => setIsModalOpen(false)} />}
-
-      {/* Goals Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {goalsTemp.map((goal) => (
-          <GoalCard key={goal.id} goal={goal} />
-        ))}
-      </div>
+      <GoalModal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedGoal(null);
+        }}
+        initialGoal={selectedGoal}
+        addGoal={addGoal}
+        updateGoal={updateGoal}
+      />
     </div>
   );
 };

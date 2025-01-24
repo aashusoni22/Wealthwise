@@ -1,196 +1,239 @@
-import React, { useState } from "react";
-import {
-  X,
-  Target,
-  Calendar,
-  Tag,
-  CreditCard,
-  FileText,
-  TrendingUp,
-  Award,
-} from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { X } from "lucide-react";
+import { goalCategories } from "../../utils/goalConfig";
+import { showToast } from "../Toast";
 
-const GoalModal = ({ onClose, onSubmit }) => {
-  const [formData, setFormData] = useState({
-    title: "",
-    target: "",
-    category: "",
-    description: "",
-    deadline: new Date().toISOString().split("T")[0],
-    currentProgress: "0",
-  });
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSubmit(formData);
-    onClose();
+const GoalModal = ({
+  isOpen,
+  onClose,
+  initialGoal = null,
+  addGoal,
+  updateGoal,
+}) => {
+  // Format date helper function
+  const formatDateForInput = (dateString) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    return date.toISOString().split("T")[0];
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
+  const [formData, setFormData] = useState({
+    title: initialGoal?.title || "",
+    category: initialGoal?.category || "",
+    target: initialGoal?.target || "",
+    Progress: initialGoal?.Progress || 0,
+    duedate: initialGoal?.duedate || "",
+    description: initialGoal?.description || "",
+  });
+
+  useEffect(() => {
+    if (initialGoal) {
+      setFormData({
+        title: initialGoal.title || "",
+        category: initialGoal.category || "",
+        target: initialGoal.target || "",
+        Progress: initialGoal.Progress || 0,
+        duedate: formatDateForInput(initialGoal.duedate),
+        description: initialGoal.description || "",
+      });
+    } else {
+      setFormData({
+        title: "",
+        category: "",
+        target: "",
+        Progress: 0,
+        duedate: "",
+        description: "",
+      });
+    }
+  }, [initialGoal, isOpen]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const data = {
+        title: formData.title,
+        category: formData.category,
+        target: parseInt(formData.target),
+        Progress: initialGoal ? parseInt(formData.Progress) : 0,
+        duedate: formData.duedate,
+        description: formData.description,
+      };
+
+      if (initialGoal) {
+        await updateGoal(initialGoal.$id, data);
+        showToast("Goal updated successfully", "success");
+      } else {
+        await addGoal(data);
+        showToast("Goal created successfully", "success");
+      }
+      onClose();
+    } catch (error) {
+      console.error("Error saving goal:", error);
+      showToast("Failed to save goal", "error");
+    }
+  };
+
+  const handleProgressUpdate = (newProgress) => {
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      Progress: Math.min(Math.max(0, newProgress), prev.target),
     }));
   };
 
+  if (!isOpen) return null;
+
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm -top-6 z-50 flex items-center justify-center p-4">
-      <div className="bg-surface-800/90 rounded-2xl max-w-lg w-full border border-slate-700/50 shadow-xl">
-        {/* Modal Header */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-700/50">
-          <h2 className="text-xl font-semibold text-white">Add New Goal</h2>
+    <div className="fixed inset-0 -top-6 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div className="w-full max-w-lg bg-slate-900 rounded-2xl shadow-xl">
+        <div className="flex items-center justify-between p-6 border-b border-slate-800">
+          <h2 className="text-xl font-semibold text-slate-100">
+            {initialGoal ? "Update Goal" : "Create New Goal"}
+          </h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-slate-700/50 rounded-xl text-slate-400 hover:text-slate-300 transition-colors"
+            className="p-2 hover:bg-slate-800 rounded-xl text-slate-400 hover:text-slate-300"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Modal Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Title Input */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">Title</label>
-            <div className="relative">
-              <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-              <input
-                type="text"
-                name="title"
-                required
-                placeholder="Enter goal title"
-                className="w-full bg-surface-900/50 border border-slate-700/50 rounded-xl pl-10 pr-4 py-2.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                value={formData.title}
-                onChange={handleInputChange}
-              />
-            </div>
-          </div>
-
-          {/* Target and Deadline Row */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-300">
-                Target Amount
-              </label>
-              <div className="relative">
-                <TrendingUp className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <input
-                  type="number"
-                  name="target"
-                  required
-                  step="0.01"
-                  placeholder="0.00"
-                  className="w-full bg-surface-900/50 border border-slate-700/50 rounded-xl pl-10 pr-4 py-2.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  value={formData.target}
-                  onChange={handleInputChange}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-300">
-                Deadline
-              </label>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <input
-                  type="date"
-                  name="deadline"
-                  required
-                  className="w-full bg-surface-900/50 border border-slate-700/50 rounded-xl pl-10 pr-4 py-2.5 text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  value={formData.deadline}
-                  onChange={handleInputChange}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Category and Current Progress Row */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-300">
-                Category
-              </label>
-              <div className="relative">
-                <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <select
-                  name="category"
-                  required
-                  className="w-full bg-surface-900/50 border border-slate-700/50 rounded-xl pl-10 pr-4 py-2.5 text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500 appearance-none"
-                  value={formData.category}
-                  onChange={handleInputChange}
-                >
-                  <option className="bg-gray-800 text-white" value="">
-                    Select category
-                  </option>
-                  <option className="bg-gray-800 text-white" value="Financial">
-                    Financial
-                  </option>
-                  <option className="bg-gray-800 text-white" value="Personal">
-                    Personal
-                  </option>
-                  <option className="bg-gray-800 text-white" value="Career">
-                    Career
-                  </option>
-                  <option className="bg-gray-800 text-white" value="Health">
-                    Health
-                  </option>
-                  <option className="bg-gray-800 text-white" value="Education">
-                    Education
-                  </option>
-                </select>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-300">
-                Current Progress
-              </label>
-              <div className="relative">
-                <Award className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <input
-                  type="number"
-                  name="currentProgress"
-                  step="0.01"
-                  placeholder="Current progress (optional)"
-                  className="w-full bg-surface-900/50 border border-slate-700/50 rounded-xl pl-10 pr-4 py-2.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  value={formData.currentProgress}
-                  onChange={handleInputChange}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Description */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">
-              Description
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-1">
+              Title
             </label>
-            <textarea
-              name="description"
-              placeholder="Add notes or milestones..."
-              rows="3"
-              className="w-full bg-surface-900/50 border border-slate-700/50 rounded-xl px-4 py-2.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
-              value={formData.description}
-              onChange={handleInputChange}
+            <input
+              type="text"
+              value={formData.title}
+              onChange={(e) =>
+                setFormData({ ...formData, title: e.target.value })
+              }
+              className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              required
             />
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-4 pt-4 border-t border-slate-700/50">
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-1">
+              Category
+            </label>
+            <select
+              value={formData.category}
+              onChange={(e) =>
+                setFormData({ ...formData, category: e.target.value })
+              }
+              className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              required
+            >
+              <option value="">Select Category</option>
+              {Object.keys(goalCategories).map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1">
+                Target
+              </label>
+              <input
+                type="number"
+                value={formData.target}
+                onChange={(e) =>
+                  setFormData({ ...formData, target: e.target.value })
+                }
+                className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                required
+                min="0"
+              />
+            </div>
+
+            {initialGoal && (
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">
+                  Current Progress
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    value={formData.Progress}
+                    onChange={(e) =>
+                      handleProgressUpdate(parseInt(e.target.value))
+                    }
+                    className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    required
+                    min="0"
+                    max={formData.target}
+                  />
+                  <div className="text-sm text-slate-400">
+                    {((formData.Progress / formData.target) * 100).toFixed(0)}%
+                  </div>
+                </div>
+
+                {/* Quick Progress Update Buttons */}
+                <div className="flex gap-2 mt-2">
+                  {[25, 50, 75, 100].map((percent) => (
+                    <button
+                      key={percent}
+                      type="button"
+                      onClick={() =>
+                        handleProgressUpdate((formData.target * percent) / 100)
+                      }
+                      className="px-2 py-1 text-xs bg-slate-700 hover:bg-slate-600 rounded text-slate-300"
+                    >
+                      {percent}%
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-1">
+              Deadline
+            </label>
+            <input
+              type="date"
+              value={formData.duedate}
+              onChange={(e) =>
+                setFormData({ ...formData, duedate: e.target.value })
+              }
+              className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-1">
+              Description (Optional)
+            </label>
+            <textarea
+              value={formData.description}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
+              className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500 h-24 resize-none"
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2.5 rounded-xl border border-slate-700 text-slate-300 hover:bg-slate-700/50 transition-colors"
+              className="px-4 py-2 text-slate-300 hover:bg-slate-800 rounded-lg"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-2.5 rounded-xl bg-primary-600 hover:bg-primary-700 text-white transition-colors"
+              className="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg"
             >
-              Create Goal
+              {initialGoal ? "Save Changes" : "Create Goal"}
             </button>
           </div>
         </form>

@@ -323,8 +323,8 @@ export class AppService {
 
   // GOALS MANAGEMENT
 
-  //create a new goal
-  async createGoal({ title, amount, dueDate, progress }) {
+  // Create a new goal
+  async createGoal({ title, category, target, duedate, description, user_id }) {
     try {
       return await this.databases.createDocument(
         conf.appwriteDatabaseId,
@@ -332,10 +332,19 @@ export class AppService {
         ID.unique(),
         {
           title,
-          amount,
-          dueDate,
-          progress,
-        }
+          category,
+          target: parseInt(target),
+          Progress: 0,
+          duedate,
+          description,
+          user_id,
+          createdAt: new Date().toISOString(),
+        },
+        [
+          Permission.read(Role.user(user_id)),
+          Permission.update(Role.user(user_id)),
+          Permission.delete(Role.user(user_id)),
+        ]
       );
     } catch (error) {
       console.error("Appwrite service :: createGoal :: error", error);
@@ -343,35 +352,10 @@ export class AppService {
     }
   }
 
-  //get all goals
-  async getAllGoals() {
-    try {
-      return await this.databases.listDocuments(
-        conf.appwriteDatabaseId,
-        conf.appwriteGoalsCollectionId
-      );
-    } catch (error) {
-      console.error("Appwrite service :: getAllGoals :: error", error);
-      throw error;
-    }
-  }
-
-  //Delete a goal
-  async deleteGoal(goalId) {
-    try {
-      return await this.databases.deleteDocument(
-        conf.appwriteDatabaseId,
-        conf.appwriteGoalsCollectionId,
-        goalId
-      );
-    } catch (error) {
-      console.error("Appwrite service :: deleteGoal :: error", error);
-      return false;
-    }
-  }
-
-  //Update a goal
-  async updateGoal(goalId, { title, amount, dueDate, progress }) {
+  async updateGoal(
+    goalId,
+    { title, category, target, Progress, duedate, description }
+  ) {
     try {
       return await this.databases.updateDocument(
         conf.appwriteDatabaseId,
@@ -379,14 +363,67 @@ export class AppService {
         goalId,
         {
           title,
-          amount,
-          dueDate,
-          progress,
+          category,
+          target: parseInt(target),
+          Progress: parseInt(Progress), // Use Progress consistently
+          duedate, // Use duedate consistently
+          description,
+          updatedAt: new Date().toISOString(),
         }
       );
     } catch (error) {
       console.error("Appwrite service :: updateGoal :: error", error);
-      return false;
+      throw error;
+    }
+  }
+
+  // Get all goals for a user
+  async getAllGoals(user_id) {
+    try {
+      return await this.databases.listDocuments(
+        conf.appwriteDatabaseId,
+        conf.appwriteGoalsCollectionId,
+        [
+          Query.equal("user_id", user_id), // Changed from userId to user_id
+          Query.orderDesc("$createdAt"),
+        ]
+      );
+    } catch (error) {
+      console.error("Appwrite service :: getAllGoals :: error", error);
+      throw error;
+    }
+  }
+
+  // Delete a goal
+  async deleteGoal(goalId) {
+    try {
+      await this.databases.deleteDocument(
+        conf.appwriteDatabaseId,
+        conf.appwriteGoalsCollectionId,
+        goalId
+      );
+      return true;
+    } catch (error) {
+      console.error("Appwrite service :: deleteGoal :: error", error);
+      throw error;
+    }
+  }
+
+  // Update goal progress
+  async updateGoalProgress(goalId, current) {
+    try {
+      return await this.databases.updateDocument(
+        conf.appwriteDatabaseId,
+        conf.appwriteGoalsCollectionId,
+        goalId,
+        {
+          current: parseFloat(current),
+          updatedAt: new Date().toISOString(),
+        }
+      );
+    } catch (error) {
+      console.error("Appwrite service :: updateGoalProgress :: error", error);
+      throw error;
     }
   }
 

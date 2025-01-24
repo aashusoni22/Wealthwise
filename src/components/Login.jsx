@@ -7,7 +7,6 @@ import authService from "../appwrite/auth";
 import { login as authLogin } from "../store/authSlice";
 import { Logo } from "../components";
 import Button from "./ui/Button";
-import { Input } from "./ui/Input";
 
 const Login = () => {
   const {
@@ -48,7 +47,7 @@ const Login = () => {
   }, []);
 
   return (
-    <div className="min-h-[90vh] flex items-center justify-center bg-surface-900 px-4 py-12 sm:px-6 lg:px-8">
+    <div className="min-h-[90vh] flex items-center justify-center bg-surface-900 px-4 lg:py-12 sm:px-1 lg:px-8">
       <div className="w-full max-w-md space-y-8">
         <div className="flex flex-col items-center">
           <Logo className="mx-auto h-12 w-auto" />

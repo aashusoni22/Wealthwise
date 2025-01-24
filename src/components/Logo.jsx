@@ -9,7 +9,7 @@ const Logo = ({ textsize = "text-2xl" }) => {
         <LineChart className="w-6 h-6 text-primary-500" />
       </div>
       <div className={`${textsize} font-bold flex items-baseline gap-0.5`}>
-        <span className="text-slate-100">wealth</span>
+        <span className="text-slate-100">Wealth</span>
         <span className="text-primary-500">wise</span>
       </div>
     </div>

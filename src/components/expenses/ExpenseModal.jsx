@@ -8,6 +8,7 @@ import {
   Tag,
 } from "lucide-react";
 import { useForm } from "react-hook-form";
+import { showToast } from "../Toast";
 
 const ExpenseModal = ({
   onClose,
@@ -15,7 +16,6 @@ const ExpenseModal = ({
   initialData = null,
   mode = "create",
 }) => {
-  // Format today's date in user's local timezone
   const getTodayDateString = () => {
     const today = new Date();
     const year = today.getFullYear();
@@ -27,13 +27,13 @@ const ExpenseModal = ({
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm({
     defaultValues: initialData
       ? {
           ...initialData,
-          date: initialData.date.split("T")[0], // Format date for input
-          amount: parseFloat(initialData.amount).toString(), // Convert amount to string
+          date: initialData.date.split("T")[0],
+          amount: parseFloat(initialData.amount).toString(),
         }
       : {
           title: "",
@@ -43,29 +43,46 @@ const ExpenseModal = ({
           date: getTodayDateString(),
           paymentMethod: "",
         },
-    resolver: (values) => {
-      const errors = {};
+    mode: "onChange",
+  });
 
-      const inputDate = new Date(values.date);
+  const onSubmitHandler = async (data) => {
+    try {
+      if (!data.title?.trim()) {
+        showToast("Title is required", "error");
+        return;
+      }
+      if (!data.amount || parseFloat(data.amount) <= 0) {
+        showToast("Please enter a valid amount", "error");
+        return;
+      }
+      if (!data.category) {
+        showToast("Please select a category", "error");
+        return;
+      }
+      if (!data.paymentMethod) {
+        showToast("Please select a payment method", "error");
+        return;
+      }
+      if (!data.date) {
+        showToast("Please select a valid date", "error");
+        return;
+      }
+
+      const inputDate = new Date(data.date);
       const maxDate = new Date();
       maxDate.setFullYear(maxDate.getFullYear() + 1);
 
       if (inputDate > maxDate) {
-        errors.date = {
-          type: "manual",
-          message: "Date cannot be more than 1 year in the future",
-        };
+        showToast("Date cannot be more than 1 year in the future", "error");
+        return;
       }
-
-      return {
-        values: {
-          ...values,
-          date: values.date || null,
-        },
-        errors,
-      };
-    },
-  });
+      await onSubmit(data);
+      onClose();
+    } catch (error) {
+      showToast(error.message || "Something went wrong", "error");
+    }
+  };
 
   return (
     <div className="fixed inset-0 -top-6 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -82,11 +99,15 @@ const ExpenseModal = ({
           </button>
         </div>
 
-        {/* Form content remains the same, just update the submit button text */}
-        <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
+        <form
+          onSubmit={handleSubmit(onSubmitHandler)}
+          className="p-6 space-y-6"
+        >
           {/* Title Input */}
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">Title</label>
+            <label className="text-sm font-medium text-slate-300">
+              Title <span className="text-red-500">*</span>
+            </label>
             <div className="relative">
               <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
               <input
@@ -103,11 +124,6 @@ const ExpenseModal = ({
                   errors.title ? "border-red-500" : "border-slate-700/50"
                 } rounded-xl pl-10 pr-4 py-2.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500`}
               />
-              {errors.title && (
-                <p className="mt-1 text-sm text-red-500">
-                  {errors.title.message}
-                </p>
-              )}
             </div>
           </div>
 
@@ -115,7 +131,7 @@ const ExpenseModal = ({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-300">
-                Amount
+                Amount <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -138,37 +154,35 @@ const ExpenseModal = ({
                     errors.amount ? "border-red-500" : "border-slate-700/50"
                   } rounded-xl pl-10 pr-4 py-2.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500`}
                 />
-                {errors.amount && (
-                  <p className="mt-1 text-sm text-red-500">
-                    {errors.amount.message}
-                  </p>
-                )}
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-300">Date</label>
+              <label className="text-sm font-medium text-slate-300">
+                Date <span className="text-red-500">*</span>
+              </label>
               <div className="relative">
                 <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                 <input
-                  {...register("date", { required: "Date is required" })}
+                  {...register("date", {
+                    required: "Date is required",
+                    validate: {
+                      futureDate: (value) => {
+                        const inputDate = new Date(value);
+                        const maxDate = new Date();
+                        maxDate.setFullYear(maxDate.getFullYear() + 1);
+                        return (
+                          inputDate <= maxDate ||
+                          "Date cannot be more than 1 year in future"
+                        );
+                      },
+                    },
+                  })}
                   type="date"
-                  max={
-                    new Date(
-                      new Date().setFullYear(new Date().getFullYear() + 1)
-                    )
-                      .toISOString()
-                      .split("T")[0]
-                  }
                   className={`w-full bg-surface-900/50 border ${
                     errors.date ? "border-red-500" : "border-slate-700/50"
                   } rounded-xl pl-10 pr-4 py-2.5 text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500`}
                 />
-                {errors.date && (
-                  <p className="mt-1 text-sm text-red-500">
-                    {errors.date.message}
-                  </p>
-                )}
               </div>
             </div>
           </div>
@@ -177,7 +191,7 @@ const ExpenseModal = ({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-300">
-                Category
+                Category <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -232,17 +246,12 @@ const ExpenseModal = ({
                     Other
                   </option>
                 </select>
-                {errors.category && (
-                  <p className="mt-1 text-sm text-red-500">
-                    {errors.category.message}
-                  </p>
-                )}
               </div>
             </div>
 
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-300">
-                Payment Method
+                Payment Method <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -282,22 +291,11 @@ const ExpenseModal = ({
                   </option>
                   <option
                     className="bg-gray-800 text-white"
-                    value="American Express"
-                  >
-                    American Express
-                  </option>
-                  <option
-                    className="bg-gray-800 text-white"
                     value="Bank Transfer"
                   >
                     Bank Transfer
                   </option>
                 </select>
-                {errors.paymentMethod && (
-                  <p className="mt-1 text-sm text-red-500">
-                    {errors.paymentMethod.message}
-                  </p>
-                )}
               </div>
             </div>
           </div>
@@ -305,7 +303,7 @@ const ExpenseModal = ({
           {/* Description */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-300">
-              Description
+              Description <span className="text-slate-400">(optional)</span>
             </label>
             <textarea
               {...register("description")}
@@ -326,9 +324,18 @@ const ExpenseModal = ({
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-2.5 rounded-xl bg-primary-600 hover:bg-primary-700 text-white transition-colors"
+              disabled={isSubmitting || Object.keys(errors).length > 0}
+              className={`flex-1 px-4 py-2.5 rounded-xl ${
+                isSubmitting || Object.keys(errors).length > 0
+                  ? "bg-primary-600/50 cursor-not-allowed"
+                  : "bg-primary-600 hover:bg-primary-700"
+              } text-white transition-colors`}
             >
-              {mode === "edit" ? "Update Expense" : "Add Expense"}
+              {isSubmitting
+                ? "Processing..."
+                : mode === "edit"
+                ? "Update Expense"
+                : "Add Expense"}
             </button>
           </div>
         </form>

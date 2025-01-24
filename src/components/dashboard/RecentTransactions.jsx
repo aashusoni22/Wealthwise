@@ -1,58 +1,150 @@
-// RecentTransactions.jsx
-import React from "react";
-import { ArrowLeftRight, CreditCard, DollarSign } from "lucide-react";
+import React, { useMemo } from "react";
+import { ChevronRight, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { categoryConfig } from "../../utils/categoryConfig";
+import { formatRelativeDate } from "../../utils/dateUtils";
 
-export const RecentTransactions = () => (
-  <div className="rounded-2xl bg-surface-800/20 p-6 backdrop-blur-sm">
-    <h3 className="text-lg flex items-center font-medium text-surface-200">
-      <ArrowLeftRight className="h-5 w-5 mr-2 text-emerald-400" /> Recent
-      Transactions
-    </h3>
-    <div className="mt-4 space-y-4">
-      {[
-        {
-          title: "Grocery Shopping",
-          amount: -120,
-          date: "Today",
-          icon: CreditCard,
-        },
-        {
-          title: "Salary Deposit",
-          amount: 3500,
-          date: "Yesterday",
-          icon: DollarSign,
-        },
-        {
-          title: "Netflix Subscription",
-          amount: -15,
-          date: "2 days ago",
-          icon: CreditCard,
-        },
-      ].map((transaction, index) => (
-        <div
-          key={index}
-          className="flex items-center justify-between rounded-xl bg-surface-800/50 p-4"
-        >
-          <div className="flex items-center gap-4">
-            <div className="rounded-lg bg-surface-600/50 p-2">
-              <transaction.icon className="h-5 w-5 text-surface-200" />
-            </div>
+const RecentTransactions = ({ transactions = [], onViewAll }) => {
+  const transactionMetrics = useMemo(() => {
+    if (!transactions.length) return null;
+
+    const today = new Date();
+    const todaysTotal = transactions
+      .filter((t) => {
+        const tDate = new Date(t.date);
+        return tDate.toDateString() === today.toDateString();
+      })
+      .reduce((sum, t) => sum + Number(t.amount), 0);
+
+    const yesterdayTotal = transactions
+      .filter((t) => {
+        const tDate = new Date(t.date);
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        return tDate.toDateString() === yesterday.toDateString();
+      })
+      .reduce((sum, t) => sum + Number(t.amount), 0);
+
+    const trend = yesterdayTotal
+      ? ((todaysTotal - yesterdayTotal) / yesterdayTotal) * 100
+      : 0;
+
+    return {
+      todaysTotal,
+      trend,
+    };
+  }, [transactions]);
+
+  return (
+    <div className="bg-slate-800/40 backdrop-blur-sm border border-slate-800/50 rounded-2xl">
+      {/* Header Section */}
+      <div className="p-5 border-b border-slate-700/50">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-lg font-semibold text-white">
+            Recent Transactions
+          </h3>
+          <button
+            onClick={onViewAll}
+            className="flex items-center gap-1 text-sm text-blue-400 hover:text-blue-300 transition-colors"
+          >
+            View All
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+
+        {transactionMetrics && (
+          <div className="flex items-center justify-between mt-4">
             <div>
-              <p className="font-medium text-surface-200">
-                {transaction.title}
+              <p className="text-sm text-slate-400">Today's Spending</p>
+              <p className="text-xl font-semibold text-white mt-1">
+                ${transactionMetrics.todaysTotal.toLocaleString()}
               </p>
-              <p className="text-sm text-surface-400">{transaction.date}</p>
+            </div>
+            <div
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-full ${
+                transactionMetrics.trend > 0
+                  ? "bg-red-500/10 text-red-400"
+                  : "bg-emerald-500/10 text-emerald-400"
+              }`}
+            >
+              {transactionMetrics.trend > 0 ? (
+                <ArrowUpRight className="w-4 h-4" />
+              ) : (
+                <ArrowDownRight className="w-4 h-4" />
+              )}
+              <span className="text-sm">
+                {Math.abs(transactionMetrics.trend).toFixed(1)}% from yesterday
+              </span>
             </div>
           </div>
-          <span
-            className={`font-medium ${
-              transaction.amount > 0 ? "text-green-500" : "text-red-500"
-            }`}
-          >
-            ${Math.abs(transaction.amount)}
-          </span>
-        </div>
-      ))}
+        )}
+      </div>
+
+      {/* Transactions List */}
+      <div className="divide-y divide-slate-700/50">
+        {(transactions || []).slice(0, 4).map((transaction, index) => {
+          const category =
+            categoryConfig[transaction.category] || categoryConfig.Other;
+          const { formatted: dateStr, isFuture } = formatRelativeDate(
+            transaction.date
+          );
+
+          return (
+            <div
+              key={index}
+              className="flex items-center justify-between p-4 hover:bg-slate-700/20 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <div
+                  className={`w-10 h-10 rounded-xl ${category.bgColor} bg-opacity-20 flex items-center justify-center`}
+                >
+                  {React.createElement(category.icon, {
+                    className: `w-5 h-5 ${category.textColor}`,
+                  })}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-slate-200">{transaction.title}</p>
+                    {isFuture && (
+                      <span className="px-1.5 py-0.5 text-[10px] font-medium bg-blue-500/10 text-blue-400 rounded-full">
+                        Upcoming
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className={`text-xs ${category.textColor}`}>
+                      {category.label || transaction.category}
+                    </span>
+                    <span className="text-xs text-slate-500">•</span>
+                    <span className="text-xs text-slate-400">{dateStr}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="text-right">
+                <span className="font-medium text-red-400">
+                  -${Number(transaction.amount).toLocaleString()}
+                </span>
+                {transaction.paymentMethod && (
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    {transaction.paymentMethod}
+                  </p>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* View All Link for Mobile */}
+      <div className="p-3 border-t border-slate-700/50 md:hidden">
+        <button
+          onClick={onViewAll}
+          className="w-full py-2 text-sm text-blue-400 hover:text-blue-300 transition-colors text-center"
+        >
+          View All Transactions
+        </button>
+      </div>
     </div>
-  </div>
-);
+  );
+};
+
+export default RecentTransactions;

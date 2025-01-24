@@ -2,7 +2,6 @@ import React from "react";
 import { Target } from "lucide-react";
 
 const BudgetStatusCard = ({ budgetMetrics }) => {
-  // Helper function to get status color classes
   const getStatusColors = (status) => {
     switch (status) {
       case "Critical":

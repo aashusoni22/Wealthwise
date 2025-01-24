@@ -29,7 +29,9 @@ export const exportToCSV = (expenses) => {
     const blob = new Blob(["\ufeff" + csv], {
       type: "text/csv;charset=utf-8;",
     });
-    const fileName = `expenses_${new Date().toISOString().split("T")[0]}.csv`;
+    const fileName = `wealthwise_transactions_${
+      new Date().toISOString().split("T")[0]
+    }.csv`;
 
     if (navigator.msSaveBlob) {
       navigator.msSaveBlob(blob, fileName);
