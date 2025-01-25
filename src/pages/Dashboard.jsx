@@ -206,7 +206,7 @@ const Dashboard = () => {
             transactions={expenses}
             onViewAll={() => navigate("/expenses")}
           />
-          <GoalsInsights goals={goals} />
+          <GoalsInsights goals={goals} onNavigate={navigate} />
         </div>
       </div>
     </div>
