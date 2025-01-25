@@ -102,7 +102,7 @@ export class AuthService {
     try {
       await this.account.createRecovery(
         email,
-        "http://localhost:5173/reset-password"
+        "https://wealthwise-eta.vercel.app/reset-password"
       );
       return true;
     } catch (error) {
