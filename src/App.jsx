@@ -5,11 +5,14 @@ import authService from "./appwrite/auth";
 import { Outlet } from "react-router-dom";
 import Sidebar from "./components/Sidebar";
 import Loader from "./components/ui/Loader";
-import SecurityAlerts from "./components/SecurityAlerts";
+import { useAuthMonitor } from "./hooks/useAuthMonitor";
 
 const App = () => {
   const dispatch = useDispatch();
   const [isLoading, setIsLoading] = useState(true);
+
+  // Add the auth monitor
+  useAuthMonitor();
 
   useEffect(() => {
     const checkUserSession = async () => {
@@ -19,10 +22,14 @@ const App = () => {
           dispatch(login(user));
         } else {
           dispatch(logout());
+          // Clear any cached data
+          localStorage.clear();
         }
       } catch (error) {
         console.error("Error checking user session:", error);
         dispatch(logout());
+        // Clear any cached data
+        localStorage.clear();
       } finally {
         setIsLoading(false);
       }
@@ -45,7 +52,6 @@ const App = () => {
         <Sidebar />
         <main className="flex-1 overflow-y-auto">
           <div className="container mx-auto px-6 py-8">
-            <SecurityAlerts />
             <Outlet />
           </div>
         </main>

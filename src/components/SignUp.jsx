@@ -262,7 +262,7 @@ function Signup() {
           </div>
         </div>
 
-        <p className="mt-8 text-center text-sm text-surface-400">
+        <p className="mt-2 text-center text-sm text-surface-400">
           Already have an account?{" "}
           <Link
             to="/login"

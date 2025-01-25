@@ -93,7 +93,7 @@ const Login = () => {
   }, []);
 
   return (
-    <div className="lg:min-h-[93vh] flex items-center justify-center py-5 lg:py-12 sm:px-6 lg:px-8">
+    <div className="lg:min-h-[89vh] flex items-center justify-center py-5 lg:py-12 sm:px-6 lg:px-8">
       <div className="w-full max-w-md">
         <div className="lg:p-8 space-y-8">
           <div className="flex flex-col items-center">
@@ -187,7 +187,7 @@ const Login = () => {
           </div>
         </div>
 
-        <p className="mt-8 text-center text-sm text-surface-400">
+        <p className="mt-2 text-center text-sm text-surface-400">
           Don't have an account?{" "}
           <Link
             to="/signup"

@@ -222,11 +222,12 @@ export class AppService {
   }
 
   //get all incomes
-  async getAllIncomes() {
+  async getAllIncomes(userId) {
     try {
       return await this.databases.listDocuments(
         conf.appwriteDatabaseId,
-        conf.appwriteIncomeCollectionId
+        conf.appwriteIncomeCollectionId,
+        [Query.equal("userId", userId), Query.orderDesc("$createdAt")]
       );
     } catch (error) {
       console.error("Appwrite service :: getAllIncomes :: error", error);
@@ -286,6 +287,7 @@ export class AppService {
       throw error;
     }
   }
+
   //get total incomes for a specific category
   async getTotalIncomeByCategory(category) {
     try {
@@ -322,7 +324,6 @@ export class AppService {
   }
 
   // GOALS MANAGEMENT
-
   // Create a new goal
   async createGoal({ title, category, target, duedate, description, user_id }) {
     try {

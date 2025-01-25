@@ -16,6 +16,17 @@ const TIME_PERIODS = {
   LAST_YEAR: "Last Year",
 };
 
+const EmptyChart = () => (
+  <div className="flex flex-col items-center justify-center h-64 text-center">
+    <div className="w-16 h-16 bg-slate-700/30 rounded-full flex items-center justify-center mb-4">
+      <BarChart3 className="w-8 h-8 text-slate-400" />
+    </div>
+    <p className="text-slate-400">
+      Add transactions to see your financial trends
+    </p>
+  </div>
+);
+
 const IncomeExpensesChart = ({ incomes = [], expenses = [] }) => {
   const [selectedPeriod, setSelectedPeriod] = useState(
     TIME_PERIODS.LAST_6_MONTHS

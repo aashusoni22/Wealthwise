@@ -98,7 +98,7 @@ const IncomeList = ({
             </p>
             <Button
               variant="emerald"
-              className="text-base font-normal"
+              className="text-base font-normal bg-primary-500 hover:bg-primary-600 transition-colors rounded-xl"
               onClick={onAddIncome}
             >
               Let's add some

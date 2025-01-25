@@ -90,6 +90,8 @@ export class AuthService {
     try {
       await this.account.deleteSessions();
       SecurityUtils.clearSession();
+      localStorage.clear();
+      window.location.reload();
     } catch (error) {
       console.error("Appwrite service :: logout :: error", error);
     }

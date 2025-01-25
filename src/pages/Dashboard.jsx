@@ -1,5 +1,4 @@
 import React, { useState, useMemo } from "react";
-
 import { Wallet, TrendingUp, TrendingDown, Target } from "lucide-react";
 import { categoryConfig } from "../utils/categoryConfig";
 import { sourceConfig } from "../utils/sourceConfig";
@@ -14,8 +13,11 @@ import StatCard from "../components/dashboard/StatCard";
 import IncomeExpensesChart from "../components/dashboard/IncomeExpensesChart";
 import ExpenseCategories from "../components/dashboard/ExpenseCategories";
 import RecentTransactions from "../components/dashboard/RecentTransactions";
+import { useAuthState } from "../hooks/useAuthState";
+import EmptyDashboard from "../components/dashboard/EmptyDashboard";
 
 const Dashboard = () => {
+  const { user, loading: authLoading } = useAuthState();
   const { expenses, loading: expensesLoading } = useExpenses();
   const { incomes, loading: incomesLoading } = useIncomes();
   const { goals, loading: goalsLoading } = useGoals();
@@ -114,57 +116,41 @@ const Dashboard = () => {
     };
   }, [expenses, incomes, goals]);
 
-  const chartData = useMemo(() => {
-    if (!expenses?.length && !incomes?.length) return [];
+  const isDashboardEmpty = useMemo(() => {
+    return !expenses?.length && !incomes?.length && !goals?.length;
+  }, [expenses, incomes, goals]);
 
-    const last6Months = Array.from({ length: 6 }, (_, i) => {
-      const date = new Date();
-      date.setMonth(date.getMonth() - i);
-      return {
-        month: date.toLocaleString("default", { month: "short" }),
-        year: date.getFullYear(),
-        monthIndex: date.getMonth(),
-      };
-    }).reverse();
-
-    return last6Months.map(({ month, year, monthIndex }) => {
-      const monthIncome =
-        incomes
-          ?.filter((income) => {
-            const incomeDate = new Date(income.date);
-            return (
-              incomeDate.getMonth() === monthIndex &&
-              incomeDate.getFullYear() === year
-            );
-          })
-          .reduce((sum, income) => sum + parseFloat(income.amount || 0), 0) ||
-        0;
-
-      const monthExpenses =
-        expenses
-          ?.filter((expense) => {
-            const expenseDate = new Date(expense.date);
-            return (
-              expenseDate.getMonth() === monthIndex &&
-              expenseDate.getFullYear() === year
-            );
-          })
-          .reduce((sum, expense) => sum + parseFloat(expense.amount || 0), 0) ||
-        0;
-
-      return {
-        name: month,
-        income: monthIncome,
-        expenses: monthExpenses,
-      };
-    });
-  }, [expenses, incomes]);
-
-  if (expensesLoading || incomesLoading || goalsLoading) {
+  if (authLoading || expensesLoading || incomesLoading || goalsLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
       </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <div className="text-center text-white">
+          <h2 className="text-xl mb-4">Please log in to view your dashboard</h2>
+          <button
+            onClick={() => navigate("/login")}
+            className="px-4 py-2 bg-blue-500 rounded-lg hover:bg-blue-600 transition-colors"
+          >
+            Login
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Show empty state for new users
+  if (isDashboardEmpty) {
+    return (
+      <EmptyDashboard
+        userName={user?.name}
+        onNavigate={(path) => navigate(path)}
+      />
     );
   }
 

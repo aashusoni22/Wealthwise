@@ -1,6 +1,5 @@
+import { Plus, Search } from "lucide-react";
 import React from "react";
-
-import { Search, Plus } from "lucide-react";
 
 const DashboardHeader = ({ onAddTransaction }) => (
   <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-8">

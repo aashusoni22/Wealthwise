@@ -38,7 +38,7 @@ const GoalsFilter = ({ activeFilter, onFilterChange }) => {
         label="Completed"
       />
       <FilterButton
-        active={activeFilter === "due-soon"}
+        active={activeFilter === "due-soon" && activeFilter !== "completed"}
         onClick={() => onFilterChange("due-soon")}
         icon={Clock}
         label="Due Soon"
