@@ -105,7 +105,7 @@ const Dashboard = () => {
       totalBalance: totalIncome - totalExpenses,
       monthlyIncome,
       monthlyExpenses,
-      savingsGoal: goals?.[0]?.target || 20000,
+      savingsGoal: goals?.[0]?.target,
       currentSavings: currentSavings > 0 ? currentSavings : 0,
       monthlyTarget,
       trends: {

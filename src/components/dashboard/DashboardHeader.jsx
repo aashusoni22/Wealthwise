@@ -1,4 +1,3 @@
-import { Plus, Search } from "lucide-react";
 import React from "react";
 
 const DashboardHeader = ({ onAddTransaction }) => (
