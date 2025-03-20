@@ -167,6 +167,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📧 Contact
 
-Your Name - [LinkedIn](https://www.linkedin.com/in/aashutosh-soni-225a12177/)
+Aashutosh Soni - [LinkedIn](https://www.linkedin.com/in/aashutosh22/)
 
 Project Link: [https://github.com/aashusoni22/WeatlhWise](https://github.com/aashusoni22/WeatlhWise)
