@@ -1,14 +1,14 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useDispatch } from "react-redux";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { showToast } from "./Toast";
 import authService from "../appwrite/auth";
 import { login as authLogin } from "../store/authSlice";
 import { Logo } from "../components";
 import Button from "./ui/Button";
-import { EyeIcon, EyeOffIcon, Github } from "lucide-react";
-import { BsGift, BsGithub, BsGoogle } from "react-icons/bs";
+import { EyeIcon, EyeOffIcon } from "lucide-react";
+import { BsGoogle } from "react-icons/bs";
 
 // Custom FormField component to replace Input
 const FormField = React.forwardRef(
@@ -31,6 +31,7 @@ const FormField = React.forwardRef(
             px-4 py-3 text-surface-100 placeholder-surface-400
             focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-transparent
             transition-colors
+            disabled:opacity-50 disabled:cursor-not-allowed
           `}
             {...props}
           />
@@ -60,20 +61,57 @@ const Login = () => {
     handleSubmit,
     formState: { errors, isSubmitting },
     reset,
+    setError,
   } = useForm();
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
+  const [isLoading, setIsLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+
+  // Get redirect path from location state or default to home
+  const from = location.state?.from?.pathname || "/";
 
   const handleLogin = async (formData) => {
     try {
+      setIsLoading(true);
       const userData = await authService.login(formData);
       if (userData) {
         dispatch(authLogin(userData));
-        navigate("/");
+        showToast("Login successful!", "success");
+        navigate(from, { replace: true });
       }
     } catch (error) {
-      showToast("Failed to login", "error");
+      console.error("Login error:", error);
+      if (error.message.includes("Invalid email or password")) {
+        setError("email", {
+          type: "manual",
+          message: "Invalid email or password",
+        });
+        setError("password", {
+          type: "manual",
+          message: "Invalid email or password",
+        });
+      } else if (error.message.includes("Too many login attempts")) {
+        showToast(error.message, "error");
+      } else {
+        showToast(error.message || "Failed to login", "error");
+      }
       reset();
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      setIsLoading(true);
+      await authService.loginWithGoogle();
+    } catch (error) {
+      console.error("Google login error:", error);
+      showToast(error.message || "Failed to login with Google", "error");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -83,6 +121,7 @@ const Login = () => {
         const userData = await authService.getCurrentUser();
         if (userData) {
           dispatch(authLogin(userData));
+          navigate(from, { replace: true });
         }
       } catch (error) {
         console.error("Error initializing auth:", error);
@@ -90,7 +129,7 @@ const Login = () => {
     };
 
     initAuth();
-  }, []);
+  }, [dispatch, navigate, from]);
 
   return (
     <div className="lg:min-h-[89vh] flex items-center justify-center py-5 lg:py-12 sm:px-6 lg:px-8">
@@ -112,6 +151,7 @@ const Login = () => {
               type="email"
               placeholder="Enter your email"
               error={errors.email}
+              disabled={isLoading}
               {...register("email", {
                 required: "Email is required",
                 pattern: {
@@ -126,11 +166,12 @@ const Login = () => {
               type="password"
               placeholder="Enter your password"
               error={errors.password}
+              disabled={isLoading}
               {...register("password", {
                 required: "Password is required",
                 minLength: {
-                  value: 6,
-                  message: "Password must be at least 6 characters",
+                  value: 8,
+                  message: "Password must be at least 8 characters",
                 },
               })}
             />
@@ -139,6 +180,8 @@ const Login = () => {
               <label className="flex items-center">
                 <input
                   type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
                   className="w-4 h-4 rounded border-surface-600 text-primary-600 focus:ring-primary-500/50 bg-surface-800"
                 />
                 <span className="ml-2 text-surface-300">Remember me</span>
@@ -154,9 +197,9 @@ const Login = () => {
             <Button
               type="submit"
               className="w-full bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white font-medium py-3 rounded-lg transition-all duration-200 flex items-center justify-center"
-              disabled={isSubmitting}
+              disabled={isLoading || isSubmitting}
             >
-              {isSubmitting ? (
+              {isLoading || isSubmitting ? (
                 <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
                 "Sign in"
@@ -175,16 +218,14 @@ const Login = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <button className="flex items-center justify-center px-4 py-2 border border-surface-600 rounded-lg hover:bg-surface-700/50 transition-colors">
-              <BsGoogle className="w-5 h-5" />
-              <span className="ml-2 text-surface-200">Google</span>
-            </button>
-            <button className="flex items-center justify-center px-4 py-2 border border-surface-600 rounded-lg hover:bg-surface-700/50 transition-colors">
-              <BsGithub className="w-5 h-5" />
-              <span className="ml-2 text-surface-200">GitHub</span>
-            </button>
-          </div>
+          <button
+            onClick={handleGoogleLogin}
+            disabled={isLoading}
+            className="w-full flex items-center justify-center px-4 py-2 border border-surface-600 rounded-lg hover:bg-surface-700/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <BsGoogle className="w-5 h-5" />
+            <span className="ml-2 text-surface-200">Continue with Google</span>
+          </button>
         </div>
 
         <p className="mt-2 text-center text-sm text-surface-400">

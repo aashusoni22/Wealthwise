@@ -20,6 +20,8 @@ const conf = {
   appwriteBudgetsCollectionId: String(
     import.meta.env.VITE_APPWRITE_BUDGETS_COLLECTION_ID
   ),
+  googleClientId: String(import.meta.env.VITE_GOOGLE_CLIENT_ID),
+  googleClientSecret: String(import.meta.env.VITE_GOOGLE_CLIENT_SECRET),
 };
 
 export default conf;

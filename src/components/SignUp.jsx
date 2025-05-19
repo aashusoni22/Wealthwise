@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useDispatch } from "react-redux";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
@@ -8,7 +8,7 @@ import { login } from "../store/authSlice";
 import { showToast } from "./Toast";
 import { Logo } from "../components";
 import Button from "./ui/Button";
-import { BsGithub, BsGoogle } from "react-icons/bs";
+import { BsGoogle } from "react-icons/bs";
 
 // Custom FormField component (same as login)
 const FormField = React.forwardRef(
@@ -31,6 +31,7 @@ const FormField = React.forwardRef(
             px-4 py-3 text-surface-100 placeholder-surface-400
             focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-transparent
             transition-colors
+            disabled:opacity-50 disabled:cursor-not-allowed
           `}
             {...props}
           />
@@ -61,11 +62,31 @@ const PasswordStrengthIndicator = ({ password }) => {
     if (/[A-Z]/.test(password)) strength++;
     if (/[a-z]/.test(password)) strength++;
     if (/[0-9]/.test(password)) strength++;
+    if (/[^A-Za-z0-9]/.test(password)) strength++;
     return strength;
   };
 
   const strength = password ? getStrength(password) : 0;
-  const bars = Array(4).fill(0);
+  const bars = Array(5).fill(0);
+
+  const getStrengthText = (strength) => {
+    switch (strength) {
+      case 0:
+        return "Very Weak";
+      case 1:
+        return "Weak";
+      case 2:
+        return "Fair";
+      case 3:
+        return "Good";
+      case 4:
+        return "Strong";
+      case 5:
+        return "Very Strong";
+      default:
+        return "";
+    }
+  };
 
   return (
     <div className="space-y-2">
@@ -85,10 +106,25 @@ const PasswordStrengthIndicator = ({ password }) => {
           />
         ))}
       </div>
-      <p className="text-xs text-surface-400">
-        Password must contain at least 8 characters, one uppercase letter, one
-        lowercase letter, and one number
-      </p>
+      <div className="flex justify-between items-center">
+        <p className="text-xs text-surface-400">
+          Password must contain at least 8 characters, one uppercase letter, one
+          lowercase letter, one number, and one special character
+        </p>
+        {password && (
+          <span
+            className={`text-xs ${
+              strength <= 2
+                ? "text-red-500"
+                : strength === 3
+                ? "text-yellow-500"
+                : "text-green-500"
+            }`}
+          >
+            {getStrengthText(strength)}
+          </span>
+        )}
+      </div>
     </div>
   );
 };
@@ -100,36 +136,51 @@ function Signup() {
     formState: { errors, isSubmitting },
     reset,
     watch,
+    setError,
   } = useForm();
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
   const password = watch("password", "");
+
+  const handleGoogleSignup = async () => {
+    try {
+      setIsLoading(true);
+      await authService.loginWithGoogle();
+    } catch (error) {
+      console.error("Google signup error:", error);
+      showToast(error.message || "Failed to signup with Google", "error");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const create = async (data) => {
     try {
+      setIsLoading(true);
       const userData = await authService.createAccount({
         email: data.email,
         password: data.password,
         name: data.name,
       });
+
       if (userData) {
-        const loggedInUserData = await authService.login({
-          email: data.email,
-          password: data.password,
-        });
-        if (loggedInUserData) {
-          dispatch(login(loggedInUserData));
-          navigate("/");
-          reset();
-        }
+        dispatch(login(userData));
+        showToast("Account created successfully!", "success");
+        navigate("/");
+        reset();
       }
     } catch (error) {
-      console.log(error);
+      console.error("Signup error:", error);
       if (error.message && error.message.includes("already exists")) {
-        showToast("Email already exists", "error");
+        setError("email", { type: "manual", message: "Email already exists" });
+      } else if (error.message.includes("Password must")) {
+        setError("password", { type: "manual", message: error.message });
       } else {
-        showToast("Failed to create account", "error");
+        showToast(error.message || "Failed to create account", "error");
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -153,11 +204,21 @@ function Signup() {
               type="text"
               placeholder="Enter your username"
               error={errors.name}
+              disabled={isLoading}
               {...register("name", {
                 required: "Username is required",
                 minLength: {
                   value: 3,
                   message: "Username must be at least 3 characters",
+                },
+                maxLength: {
+                  value: 30,
+                  message: "Username must be less than 30 characters",
+                },
+                pattern: {
+                  value: /^[a-zA-Z0-9_]+$/,
+                  message:
+                    "Username can only contain letters, numbers, and underscores",
                 },
               })}
             />
@@ -167,6 +228,7 @@ function Signup() {
               type="email"
               placeholder="Enter your email"
               error={errors.email}
+              disabled={isLoading}
               {...register("email", {
                 required: "Email is required",
                 pattern: {
@@ -182,6 +244,7 @@ function Signup() {
                 type="password"
                 placeholder="Create a strong password"
                 error={errors.password}
+                disabled={isLoading}
                 {...register("password", {
                   required: "Password is required",
                   minLength: {
@@ -189,9 +252,10 @@ function Signup() {
                     message: "Password must be at least 8 characters",
                   },
                   pattern: {
-                    value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/,
+                    value:
+                      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
                     message:
-                      "Password must contain at least one uppercase letter, one lowercase letter, and one number",
+                      "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character",
                   },
                 })}
               />
@@ -203,6 +267,7 @@ function Signup() {
                 type="checkbox"
                 id="terms"
                 className="w-4 h-4 rounded border-surface-600 text-primary-600 focus:ring-primary-500/50 bg-surface-800"
+                disabled={isLoading}
                 {...register("terms", {
                   required: "You must accept the terms and conditions",
                 })}
@@ -226,9 +291,9 @@ function Signup() {
             <Button
               type="submit"
               className="w-full bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white font-medium py-3 rounded-lg transition-all duration-200 flex items-center justify-center"
-              disabled={isSubmitting}
+              disabled={isLoading || isSubmitting}
             >
-              {isSubmitting ? (
+              {isLoading || isSubmitting ? (
                 <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
                 <>
@@ -250,16 +315,14 @@ function Signup() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <button className="flex items-center justify-center px-4 py-2 border border-surface-600 rounded-lg hover:bg-surface-700/50 transition-colors">
-              <BsGoogle className="w-5 h-5" />
-              <span className="ml-2 text-surface-200">Google</span>
-            </button>
-            <button className="flex items-center justify-center px-4 py-2 border border-surface-600 rounded-lg hover:bg-surface-700/50 transition-colors">
-              <BsGithub className="w-5 h-5" />
-              <span className="ml-2 text-surface-200">GitHub</span>
-            </button>
-          </div>
+          <button
+            onClick={handleGoogleSignup}
+            disabled={isLoading}
+            className="w-full flex items-center justify-center px-4 py-2 border border-surface-600 rounded-lg hover:bg-surface-700/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <BsGoogle className="w-5 h-5" />
+            <span className="ml-2 text-surface-200">Continue with Google</span>
+          </button>
         </div>
 
         <p className="mt-2 text-center text-sm text-surface-400">
@@ -268,7 +331,7 @@ function Signup() {
             to="/login"
             className="font-medium text-primary-400 hover:text-primary-300 transition-colors"
           >
-            Sign in instead
+            Sign in
           </Link>
         </p>
       </div>
